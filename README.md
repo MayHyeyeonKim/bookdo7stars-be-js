@@ -22,7 +22,6 @@ The `develop` branch is the default branch. Each feature branch is always create
 - Input validation and error handling
 - Secure with JWT and password hashing using passport.js
 - Environment-based configuration
-- 
 
 ## Technologies
 - Framework: Node.js
