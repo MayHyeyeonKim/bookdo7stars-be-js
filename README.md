@@ -48,7 +48,7 @@ The `develop` branch is the default branch. Each feature branch is always create
 2. The API will be available at `http://localhost:4000`.
 
 ## API Documentation
-TODO
+API documentation can be found at [API Documentation](https://indecisive-package-ca5.notion.site/API-ac717eb44ee84c3abfd79f726c91e604?pvs=4).
 
 ## Testing
 For testing the testing library `jest` will be used.
