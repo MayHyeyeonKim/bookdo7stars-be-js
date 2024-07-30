@@ -14,6 +14,7 @@
 This project is an extension of the existing [Book Store Backend Project](https://github.com/7CodeCrew/book-store-be) using different technologies to enhance security and other aspects.
 
 ## Git Flow
+Refer to this document for the basic Git Flow: [Git Flow Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow).
 The `develop` branch is the default branch. Each feature branch is always created from the develop branch. Feature branches are created per task and follow the naming convention `feature/<<team-member-name>>-<<task-keyword>>`. For example, if Joon is working on the login feature, the branch would be named `feature/joon-login`.
 
 ## Features
