@@ -11,10 +11,7 @@
   "extends": ["eslint:recommended", "plugin:prettier/recommended", "prettier"],
   "plugins": ["import", "prettier"],
   "rules": {
-    "prettier/prettier": ["error",
-    {
-      "endOfLine": "auto"
-    }],
+    "prettier/prettier": "error",
     "max-len": [
       "error",
       {

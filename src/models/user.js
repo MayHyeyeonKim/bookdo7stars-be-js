@@ -1,15 +1,5 @@
-const { Sequelize, DataTypes } = require('sequelize');
-
-const sequelize = new Sequelize(process.env.DATABASE_NAME, process.env.DATABASE_USER, process.env.DATABASE_PASSWORD, {
-  host: process.env.DATABASE_HOST,
-  dialect: 'postgres',
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false, // Set to true if you want to verify the server's certificate
-    },
-  },
-});
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/db.js';
 
 const User = sequelize.define(
   'users',
@@ -61,6 +51,7 @@ const User = sequelize.define(
     status: {
       type: DataTypes.STRING(50),
       allowNull: false,
+      defaultValue: 'active',
     },
     created_at: {
       type: DataTypes.DATE,
@@ -76,4 +67,4 @@ const User = sequelize.define(
   },
 );
 
-module.exports = User;
+export default User;
