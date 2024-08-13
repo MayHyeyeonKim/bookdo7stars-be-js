@@ -51,7 +51,6 @@ const User = sequelize.define(
     status: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      defaultValue: 'active',
     },
     created_at: {
       type: DataTypes.DATE,

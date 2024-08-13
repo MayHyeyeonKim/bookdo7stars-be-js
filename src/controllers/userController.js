@@ -95,4 +95,67 @@ router.post('/users', async function (req, res) {
   }
 });
 
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: 유저를 로그인시킵니다.
+ *     tags: [sign in a user]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: 유저 이메일
+ *                 example: john.123doe@example.com
+ *               password:
+ *                 type: string
+ *                 description: 유저 비밀번호
+ *                 example: Password123!
+ *     responses:
+ *       200:
+ *         description: 로그인 성공했습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 name:
+ *                   type: string
+ *                   description: 유저의 이름
+ *                   example: John Doe
+ *                 grade:
+ *                   type: string
+ *                   description: 회원 등급
+ *                   example: Bronze
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 오류 메세지
+ *                   example: Error signing in a user
+ */
+
+router.post('/login', async function (req, res) {
+  try {
+    const user = await userService.findUser(req.body);
+    res.status(200).json({ user: { name: user.name, grade: user.grade } });
+  } catch (err) {
+    console.error('Error logging in user', err.message);
+    res.status(400).json({ message: err.message });
+  }
+});
+
 export default router;
