@@ -1,6 +1,9 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import userService from '../services/userService.js';
+import session from 'express-session';
+import passport from '../passport/oauth.js';
+import dotenv from 'dotenv';
 
 /**
  * @swagger
@@ -10,9 +13,24 @@ import userService from '../services/userService.js';
  */
 
 const router = express.Router();
+dotenv.config();
+router.use(
+  session({
+    secret: 'your_secret_key',
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      secure: false, // HTTPS를 사용하면 true로 설정
+      httpOnly: true,
+      sameSite: 'Lax', // 다른 도메인 간 쿠키 전송을 허용하려면 'none'으로 설정
+    },
+  }),
+);
 
 router.use(bodyParser.json());
-router.use(bodyParser.urlencoded({ extended: false }));
+router.use(bodyParser.urlencoded({ extended: true }));
+router.use(passport.initialize());
+router.use(passport.session());
 
 /**
  * @swagger
@@ -148,13 +166,97 @@ router.post('/users', async function (req, res) {
  *                   example: Error signing in a user
  */
 
-router.post('/login', async function (req, res) {
+router.post(
+  '/login',
+  passport.authenticate('local', { failureMessage: { message: 'fault' }, successMessage: { message: 'success' } }),
+);
+/*
+// 세션에 사용자 정보를 저장
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+// 세션에서 사용자 정보를 복구
+passport.deserializeUser((obj, done) => {
+  done(null, obj);
+});
+
+passport.use(
+  'github',
+  new OAuth2Strategy(
+    {
+      authorizationURL: 'https://github.com/login/oauth/authorize',
+      tokenURL: 'https://github.com/login/oauth/access_token',
+      clientID: process.env.CLIENT_ID,
+      clientSecret: process.env.CLIENT_SECRET,
+      callbackURL: 'http://localhost:4000/auth/github/callback',
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      // 여기에서 사용자 정보 확인 및 저장
+      const response = await axios.get('https://api.github.com/user', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      console.log(response.data);
+
+      const emailResponse = await axios.get('https://api.github.com/user/emails', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      console.log(emailResponse);
+      response.data.email = emailResponse.data[0].email;
+
+      return done(null, response.data);
+    },
+  ),
+);*/
+
+router.get('/auth/github', passport.authenticate('github'));
+
+router.get(
+  '/auth/github/callback',
+  passport.authenticate('github', { failureMessage: { message: 'fault' }, successMessage: { message: 'success' } }),
+  async (req, res) => {
+    const user = await userService.findUserByEmail(req.session.passport.user);
+    if (!user) {
+      const newUser = {
+        email: req.session.passport.user.email,
+        password: req.session.passport.user.email,
+        name: req.session.passport.user.login,
+      };
+      await userService.createUser(newUser);
+    }
+
+    res.status(201).json(req.session.passport.user);
+  },
+);
+
+router.get(
+  '/auth/google/callback',
+  passport.authenticate('google', { failureMessage: { message: 'fault' }, successMessage: { message: 'success' } }),
+  async (req, res) => {
+    const user = await userService.findUserByEmail(req.session.passport.user);
+    if (!user) {
+      const newUser = {
+        email: req.session.passport.user.email,
+        password: req.session.passport.user.email,
+        name: req.session.passport.user.login,
+      };
+      await userService.createUser(newUser);
+    }
+
+    res.status(201).json(req.session.passport.user);
+  },
+);
+
+router.get('/session', async function (req, res) {
   try {
-    const user = await userService.findUser(req.body);
-    res.status(200).json({ user: { name: user.name, grade: user.grade } });
+    const user = await userService.findUserByEmail(req.session.passport.user);
+    res.status(200).json({ user });
   } catch (err) {
     console.error('Error logging in user', err.message);
-    res.status(400).json({ message: err.message });
   }
 });
 

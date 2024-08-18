@@ -1,5 +1,5 @@
 {
-  "name": "bookdo7star_be",
+  "name": "bookdo7stars_be",
   "version": "1.0.0",
   "description": "",
   "type": "module",
@@ -14,7 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "1.7.2",
+    "axios": "^1.7.2",
     "bcrypt": "^5.1.1",
     "bcryptjs": "2.4.3",
     "body-parser": "^1.20.2",
@@ -25,6 +25,9 @@
     "express": "4.19.2",
     "express-session": "^1.18.0",
     "jsonwebtoken": "9.0.2",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0",
+    "passport-oauth2": "^1.8.0",
     "pg": "^8.12.0",
     "sequelize": "^6.37.3",
     "swagger-jsdoc": "^6.2.8",
