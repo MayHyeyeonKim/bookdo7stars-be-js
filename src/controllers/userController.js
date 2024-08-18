@@ -17,12 +17,12 @@ dotenv.config();
 router.use(
   session({
     secret: 'your_secret_key',
-    resave: false,
-    saveUninitialized: true,
+    resave: false, // 세션이 수정되지 않았더라도 항상 저장할지 여부
+    saveUninitialized: true, // 새로 생성된 세션이 저장될지 여부
     cookie: {
-      secure: false, // HTTPS를 사용하면 true로 설정
-      httpOnly: true,
-      sameSite: 'Lax', // 다른 도메인 간 쿠키 전송을 허용하려면 'none'으로 설정
+      secure: false, // 쿠키가 HTTPS에서만 전송될지 여부. HTTPS를 사용하는 경우 true로 설정
+      httpOnly: true, // 클라이언트 측 스크립트에서 쿠키에 접근할 수 없도록 설정
+      sameSite: 'Lax', // 다른 도메인 간 쿠키 전송을 허용하려면 'none'으로 설정, 다른 도메인 간 쿠키 전송을 허용할지 여부. 'Lax'는 대부분의 경우 안전한 기본값
     },
   }),
 );
@@ -104,7 +104,9 @@ router.use(passport.session());
  */
 router.post('/users', async function (req, res) {
   try {
+    console.log('req.body는 어떻게 생겼을까? ', req.body);
     const newUser = await userService.createUser(req.body);
+    console.log('newUser는 어떻게 생겼을까? ', newUser);
     res.status(201).json({ userId: newUser.id, message: 'User registered successfully' });
   } catch (err) {
     console.error('Error registering user:', err.message);

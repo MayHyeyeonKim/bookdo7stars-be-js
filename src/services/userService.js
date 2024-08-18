@@ -32,3 +32,37 @@ class UserService {
 }
 
 export default new UserService(); // Singleton pattern for UserService
+
+/**
+ * 
+const inputUser = { user };
+이 코드는 user 객체를 inputUser 객체의 속성으로 추가합니다. 
+결과적으로, inputUser는 user 객체를 포함하는 속성을 가지게 됩니다. 
+이 경우, inputUser는 다음과 같은 구조를 가집니다:
+
+const user = {
+  name: 'Alice',
+  email: 'alice@example.com'
+};
+
+// user 객체를 속성으로 추가
+const inputUser = { user };
+
+console.log(inputUser);
+// 출력: { user: { name: 'Alice', email: 'alice@example.com' } }
+
+const inputUser = { ...user };
+이 코드는 user 객체의 속성을 모두 복사하여 새로운 객체를 만듭니다. 
+결과적으로, inputUser는 user 객체의 속성들을 직접 가지게 됩니다:
+
+const user = {
+  name: 'Alice',
+  email: 'alice@example.com'
+};
+
+// user 객체의 모든 속성을 복사하여 새로운 객체 생성
+const inputUser = { ...user };
+
+console.log(inputUser);
+// 출력: { name: 'Alice', email: 'alice@example.com' }
+ */
