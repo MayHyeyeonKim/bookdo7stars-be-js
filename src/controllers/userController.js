@@ -17,12 +17,12 @@ dotenv.config();
 router.use(
   session({
     secret: 'your_secret_key',
-    resave: false, // 세션이 수정되지 않았더라도 항상 저장할지 여부
-    saveUninitialized: true, // 새로 생성된 세션이 저장될지 여부
+    resave: false,
+    saveUninitialized: true,
     cookie: {
-      secure: false, // 쿠키가 HTTPS에서만 전송될지 여부. HTTPS를 사용하는 경우 true로 설정
-      httpOnly: true, // 클라이언트 측 스크립트에서 쿠키에 접근할 수 없도록 설정
-      sameSite: 'Lax', // 다른 도메인 간 쿠키 전송을 허용하려면 'none'으로 설정, 다른 도메인 간 쿠키 전송을 허용할지 여부. 'Lax'는 대부분의 경우 안전한 기본값
+      secure: false, // HTTPS를 사용하면 true로 설정
+      httpOnly: true,
+      sameSite: 'Lax', // 다른 도메인 간 쿠키 전송을 허용하려면 'none'으로 설정
     },
   }),
 );
@@ -104,9 +104,7 @@ router.use(passport.session());
  */
 router.post('/users', async function (req, res) {
   try {
-    console.log('req.body는 어떻게 생겼을까? ', req.body);
     const newUser = await userService.createUser(req.body);
-    console.log('newUser는 어떻게 생겼을까? ', newUser);
     res.status(201).json({ userId: newUser.id, message: 'User registered successfully' });
   } catch (err) {
     console.error('Error registering user:', err.message);
@@ -155,7 +153,7 @@ router.post('/users', async function (req, res) {
  *                   type: string
  *                   description: 회원 등급
  *                   example: Bronze
- *       500:
+ *       401:
  *         description: 서버 오류
  *         content:
  *           application/json:
@@ -165,13 +163,23 @@ router.post('/users', async function (req, res) {
  *                 message:
  *                   type: string
  *                   description: 오류 메세지
- *                   example: Error signing in a user
+ *                   example: User not found or Incorrect Password
  */
 
-router.post(
-  '/login',
-  passport.authenticate('local', { failureMessage: { message: 'fault' }, successMessage: { message: 'success' } }),
-);
+router.post('/login', (req, res) => {
+  passport.authenticate('local', (err, user, info) => {
+    if (!user) {
+      return res.status(401).json({ message: info.message });
+    }
+    req.logIn(user, (err) => {
+      if (err) {
+        return res.status(500).json({ message: err });
+      }
+      return res.status(200).json(user);
+    });
+  })(req, res);
+});
+
 /*
 // 세션에 사용자 정보를 저장
 passport.serializeUser((user, done) => {
@@ -225,7 +233,7 @@ router.get(
     if (!user) {
       const newUser = {
         email: req.session.passport.user.email,
-        password: req.session.passport.user.email,
+        password: Math.random().toFixed(5).toString(),
         name: req.session.passport.user.login,
       };
       await userService.createUser(newUser);
@@ -243,7 +251,7 @@ router.get(
     if (!user) {
       const newUser = {
         email: req.session.passport.user.email,
-        password: req.session.passport.user.email,
+        password: Math.random().toFixed(5).toString(),
         name: req.session.passport.user.login,
       };
       await userService.createUser(newUser);
@@ -260,6 +268,51 @@ router.get('/session', async function (req, res) {
   } catch (err) {
     console.error('Error logging in user', err.message);
   }
+});
+
+/**
+ * @swagger
+ * /logout:
+ *   post:
+ *     summary: 유저를 로그아웃시킵니다.
+ *     tags: [sign out a user]
+ *     requestBody:
+ *       required: false
+ *     responses:
+ *       200:
+ *         description: 로그아웃 성공했습니다.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 로그아웃 성공 메시지
+ *                   example: Logout successful
+ *       500:
+ *         description: 서버 오류
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: 로그 아웃 오류 메세지
+ *                   example: Error logging out
+ */
+
+router.post('/logout', function (req, res) {
+  req.logout(function (err) {
+    if (err) {
+      return res.status(500).json({ message: 'Error logging out' });
+    }
+    req.session.destroy(() => {
+      res.clearCookie('connect.sid');
+      return res.status(200).json({ message: 'Logout successful' });
+    });
+  });
 });
 
 export default router;

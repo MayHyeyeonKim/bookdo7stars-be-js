@@ -1,23 +1,21 @@
-import dotenv from 'dotenv';
-dotenv.config();
 import passport from 'passport';
 import OAuth2Strategy from 'passport-oauth2';
 import LocalStrategy from 'passport-local';
 import axios from 'axios';
-
+import dotenv from 'dotenv';
 import userService from '../services/userService.js';
 
-// Log environment variables
-console.log('GITHUB_CLIENT_ID:', process.env.GITHUB_CLIENT_ID);
-console.log('GITHUB_CLIENT_SECRET:', process.env.GITHUB_CLIENT_SECRET);
-console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID);
-console.log('GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET);
+dotenv.config();
 
 passport.use(
   new LocalStrategy({ usernameField: 'email', passwordField: 'password' }, async (email, password, done) => {
     // Replace this with your user authentication logic
-    const user = await userService.findUserByPassword({ email: email, password: password });
-    return done(null, user);
+    try {
+      const user = await userService.findUserByPassword({ email: email, password: password });
+      return done(null, user);
+    } catch (err) {
+      return done(null, false, err);
+    }
   }),
 );
 

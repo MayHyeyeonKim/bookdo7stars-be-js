@@ -4,8 +4,12 @@ import userController from './src/controllers/userController.js';
 import cors from 'cors';
 
 const app = express();
-// app.use(cors());
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(
+  cors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+  }),
+);
 
 setupSwagger(app);
 app.locals.pretty = true;
