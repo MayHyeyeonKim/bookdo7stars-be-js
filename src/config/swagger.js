@@ -11,7 +11,7 @@ const options = {
       description: '간단한 Express API입니다.',
     },
   },
-  apis: ['./src/controllers/userController.js'], // API 라우트 파일을 지정합니다.
+  apis: ['./src/controllers/userController.js', './src/controllers/bookController.js'], // API 라우트 파일을 지정합니다.
 };
 
 const specs = swaggerJsdoc(options);

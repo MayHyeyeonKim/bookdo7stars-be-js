@@ -1,9 +1,6 @@
 import express from 'express';
-import bodyParser from 'body-parser';
 import userService from '../services/userService.js';
-import session from 'express-session';
 import passport from '../passport/oauth.js';
-import dotenv from 'dotenv';
 
 /**
  * @swagger
@@ -13,31 +10,13 @@ import dotenv from 'dotenv';
  */
 
 const router = express.Router();
-dotenv.config();
-router.use(
-  session({
-    secret: 'your_secret_key',
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-      secure: false, // HTTPS를 사용하면 true로 설정
-      httpOnly: true,
-      sameSite: 'Lax', // 다른 도메인 간 쿠키 전송을 허용하려면 'none'으로 설정
-    },
-  }),
-);
-
-router.use(bodyParser.json());
-router.use(bodyParser.urlencoded({ extended: true }));
-router.use(passport.initialize());
-router.use(passport.session());
 
 /**
  * @swagger
- * /users:
+ * /user:
  *   post:
  *     summary: 새로운 유저를 생성합니다.
- *     tags: [Creaate a user]
+ *     tags: [Create a user]
  *     requestBody:
  *       required: true
  *       content:
@@ -102,7 +81,7 @@ router.use(passport.session());
  *                   description: 오류 메세지
  *                   example: Error registering user
  */
-router.post('/users', async function (req, res) {
+router.post('/', async function (req, res) {
   try {
     const newUser = await userService.createUser(req.body);
     res.status(201).json({ userId: newUser.id, message: 'User registered successfully' });
@@ -115,7 +94,7 @@ router.post('/users', async function (req, res) {
 
 /**
  * @swagger
- * /login:
+ * /user/login:
  *   post:
  *     summary: 유저를 로그인시킵니다.
  *     tags: [sign in a user]
@@ -180,49 +159,6 @@ router.post('/login', (req, res) => {
   })(req, res);
 });
 
-/*
-// 세션에 사용자 정보를 저장
-passport.serializeUser((user, done) => {
-  done(null, user);
-});
-
-// 세션에서 사용자 정보를 복구
-passport.deserializeUser((obj, done) => {
-  done(null, obj);
-});
-
-passport.use(
-  'github',
-  new OAuth2Strategy(
-    {
-      authorizationURL: 'https://github.com/login/oauth/authorize',
-      tokenURL: 'https://github.com/login/oauth/access_token',
-      clientID: process.env.CLIENT_ID,
-      clientSecret: process.env.CLIENT_SECRET,
-      callbackURL: 'http://localhost:4000/auth/github/callback',
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      // 여기에서 사용자 정보 확인 및 저장
-      const response = await axios.get('https://api.github.com/user', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      console.log(response.data);
-
-      const emailResponse = await axios.get('https://api.github.com/user/emails', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      console.log(emailResponse);
-      response.data.email = emailResponse.data[0].email;
-
-      return done(null, response.data);
-    },
-  ),
-);*/
-
 router.get('/auth/github', passport.authenticate('github'));
 
 router.get(
@@ -272,7 +208,7 @@ router.get('/session', async function (req, res) {
 
 /**
  * @swagger
- * /logout:
+ * /user/logout:
  *   post:
  *     summary: 유저를 로그아웃시킵니다.
  *     tags: [sign out a user]
