@@ -7,17 +7,24 @@ import dotenv from 'dotenv';
 // Schedule a job to run every minute
 dotenv.config();
 
-cron.schedule('0 12 * * *', async () => {
-  console.log('Job running every minute');
-  const obj = new AladinBooksJob();
-  await obj.getAladinBooks('ItemNewAll');
-  await obj.getAladinBooks('ItemNewSpecial');
-  await obj.getAladinBooks('ItemEditorChoice');
-  await obj.getAladinBooks('Bestseller');
-  await obj.getAladinBooks('BlogBest');
-});
-
 class AladinBooksJob {
+  constructor() {
+    this.init();
+  }
+
+  init() {
+    console.log('start AladinBooksJob init method');
+    cron.schedule('12 16 * * *', async () => {
+      console.log('Job running every day');
+      const obj = new AladinBooksJob();
+      await obj.getAladinBooks('ItemNewAll');
+      await obj.getAladinBooks('ItemNewSpecial');
+      await obj.getAladinBooks('ItemEditorChoice');
+      await obj.getAladinBooks('Bestseller');
+      await obj.getAladinBooks('BlogBest');
+    });
+  }
+
   async getAladinBooks(queryType) {
     const totalCount = await this.getAladinBooksCountByQueryType(queryType);
     for (let i = 1; i <= Math.ceil(totalCount / 50); i++) {
@@ -41,7 +48,7 @@ class AladinBooksJob {
 
   async fetchAladinBooksByQueryType(queryType, page) {
     const ttbKey = process.env.ALADIN_TTB_KEY;
-    const url = `http://www.aladin.co.kr/ttb/api/ItemList.aspx?ttbkey=${ttbKey}&QueryType=${queryType}&MaxResults=50&start=${page}&SearchTarget=Book&output=xml&Version=20131101&Sort=PublishTime`;
+    const url = `http://www.aladin.co.kr/ttb/api/ItemList.aspx?ttbkey=${ttbKey}&QueryType=${queryType}&MaxResults=50&start=${page}&SearchTarget=Book&output=xml&Version=20131101&Cover=Big`;
     // Fetch the data from the URL
     const response = await axios.get(url);
 

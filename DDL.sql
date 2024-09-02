@@ -61,3 +61,28 @@ CREATE TABLE aladinbooks (
   fixedPrice BOOLEAN DEFAULT FALSE,
   customerReviewRank NUMERIC
 );
+
+
+
+CREATE OR REPLACE FUNCTION sync_aladinbooks_to_books()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO books (
+    isbn, title, author, description, cover, "stockStatus", "categoryId", mileage, 
+    "categoryName", publisher, adult, "fixedPrice", "priceStandard", "priceSales", 
+    "customerReviewRank", "queryType"
+  )
+  VALUES (
+    NEW.isbn13, NEW.title, NEW.author, NEW.description, NEW.cover, NEW.stockStatus, 
+    NEW.categoryId, NEW.mileage, NEW.categoryName, NEW.publisher, NEW.adult, 
+    NEW.fixedPrice, NEW.priceStandard, NEW.priceSales, NEW.customerReviewRank, 'aladinbooks'
+  );
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_insert_aladinbooks
+AFTER INSERT ON aladinbooks
+FOR EACH ROW
+EXECUTE FUNCTION sync_aladinbooks_to_books();
