@@ -129,8 +129,13 @@ router.get('/detail/:id', async function (req, res) {
     res.status(200).json({ book, message: 'Book detail loaded successfully' });
   } catch (err) {
     console.error('Error loading book: ', err.message);
-    if (err.errors != null && err.errors[0].message != null) res.status(500).json({ message: err.errors[0].message });
-    else res.status(500).json({ message: 'Error loading book detail' });
+    if (err.errors != null && err.errors[0].message != null) {
+      return res.status(500).json({ message: err.errors[0].message });
+    }
+    if (err.message === 'Book not found') {
+      return res.status(404).json({ message: err.message });
+    }
+    res.status(500).json({ message: 'Error loading book detail' });
   }
 });
 
