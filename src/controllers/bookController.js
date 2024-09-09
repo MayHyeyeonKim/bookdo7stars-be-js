@@ -139,4 +139,22 @@ router.get('/detail/:id', async function (req, res) {
   }
 });
 
+router.get('/:groupName', async function (req, res) {
+  try {
+    const groupName = req.params.groupName;
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 20;
+    let books;
+
+    if (!groupName) res.status(500).json({ message: 'need group Name' });
+
+    books = await bookService.getBooksByQueryType(groupName, page, pageSize);
+    res.status(200).json({ books: books, message: 'Books loaded successfully' });
+  } catch (err) {
+    console.error('Error loading books: ', err.message);
+    if (err.errors != null && err.errors[0].message != null) res.status(500).json({ message: err.errors[0].message });
+    else res.status(500).json({ message: 'Error loading books' });
+  }
+});
+
 export default router;
