@@ -139,21 +139,105 @@ router.get('/detail/:id', async function (req, res) {
   }
 });
 
+/**
+ * @swagger
+ * /book/{groupName}:
+ *   get:
+ *     tags: [Get books by query type]
+ *     summary: Find books by query type
+ *     description: Returns books by query type from the database.
+ *     operationId: getBooksByQueryType
+ *     parameters:
+ *       - name: groupName
+ *         in: path
+ *         description: The type of book group to fetch, such as 'Bestseller' or 'itemNewAll'
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: page
+ *         in: query
+ *         description: Page number to load.
+ *         schema:
+ *           type: integer
+ *           format: int32
+ *           default: 1
+ *       - name: pageSize
+ *         in: query
+ *         description: Number of items per page.
+ *         schema:
+ *           type: integer
+ *           format: int32
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: Books by queryType loaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 books:
+ *                   type: array
+ *                   description: array of book objects
+ *                   example: [{
+ *                      "title": "book1",
+ *                      "isbn": "xxx",
+ *                      "author": "author1",
+ *                      "cover": "cover1",
+ *                      "priceStandard": 100
+ *                    },
+ *                    {
+ *                      "title": "book2",
+ *                      "isbn": "xxx2",
+ *                      "author": "author2",
+ *                      "cover": "cover2",
+ *                      "priceStandard": 100
+ *                    }]
+ *                 message:
+ *                   type: string
+ *                   description: response message
+ *                   example: Books by queryType loaded successfully
+ *       400:
+ *         description: Invalid query type supplied
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Invalid query type
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message
+ *                   example: Error loading books by query type
+ */
+
 router.get('/:groupName', async function (req, res) {
   try {
     const groupName = req.params.groupName;
-    const page = parseInt(req.query.page) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 20;
-    let books;
+    const { page, pageSize } = req.query;
 
-    if (!groupName) res.status(500).json({ message: 'need group Name' });
+    const books = await bookService.getBooksByQueryType(groupName, page, pageSize);
 
-    books = await bookService.getBooksByQueryType(groupName, page, pageSize);
-    res.status(200).json({ books: books, message: 'Books loaded successfully' });
+    res.status(200).json({ books, message: 'Books loaded successfully' });
   } catch (err) {
     console.error('Error loading books: ', err.message);
-    if (err.errors != null && err.errors[0].message != null) res.status(500).json({ message: err.errors[0].message });
-    else res.status(500).json({ message: 'Error loading books' });
+
+    if (err.message === 'Invalid query type' || err.message === 'Query type is missing') {
+      return res.status(400).json({ message: err.message });
+    }
+
+    if (err.errors != null && err.errors[0].message != null) {
+      res.status(500).json({ message: err.errors[0].message });
+    } else res.status(500).json({ message: 'Error loading books' });
   }
 });
 

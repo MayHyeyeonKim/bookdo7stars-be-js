@@ -14,7 +14,7 @@ class AladinBooksJob {
 
   init() {
     console.log('start AladinBooksJob init method');
-    cron.schedule('12 16 * * *', async () => {
+    cron.schedule('* * * * *', async () => {
       console.log('Job running every day');
       const obj = new AladinBooksJob();
       await obj.getAladinBooks('ItemNewAll');

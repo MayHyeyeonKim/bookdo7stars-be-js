@@ -29,6 +29,9 @@ const Book = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: false,
     },
+    pubDate: {
+      type: DataTypes.DATE,
+    },
     stockStatus: {
       type: DataTypes.STRING(100),
     },
