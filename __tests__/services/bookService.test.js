@@ -106,68 +106,150 @@ describe('bookService', () => {
 
     await expect(bookService.getBookDetailById(1)).rejects.toThrow('Error loading book detail');
   });
-});
 
-describe('bookSeviece.getBooksByQueryType', () => {
-  it('should return books filtered by queryType with pagination', async () => {
-    //가짜 데이터 설정
+  it('should load books by queryType in Book table in the database and order by pubDate for non-Bestseller queryType', async () => {
     const mockBooks = [
-      { id: 1, title: 'Book1', queryType: 'ItemNewAll' },
-      { id: 2, title: 'Book2', queryType: 'ItemNewAll' },
-      { id: 3, title: 'Book3', queryType: 'ItemNewAll' },
+      {
+        id: '1',
+        isbn: 'xxx',
+        title: 'book1',
+        author: 'author1',
+        description: 'description1',
+        cover: 'cover1',
+        stockStatus: 'xx',
+        categoryId: 'id1',
+        mileage: 1,
+        categoryName: 'cat1',
+        publisher: 'publisher1',
+        adult: true,
+        fixedPrice: true,
+        priceStandard: 100,
+        priceSales: 90,
+        customerReviewRank: 10,
+        queryType: 'ItemNewAll',
+        deleted: false,
+      },
+      {
+        id: '2',
+        isbn: 'xxx2',
+        title: 'book2',
+        author: 'author2',
+        description: 'description2',
+        cover: 'cover2',
+        stockStatus: 'xx2',
+        categoryId: 'id2',
+        mileage: 2,
+        categoryName: 'cat1',
+        publisher: 'publisher2',
+        adult: true,
+        fixedPrice: true,
+        priceStandard: 100,
+        priceSales: 90,
+        customerReviewRank: 10,
+        queryType: 'ItemNewAll',
+        deleted: false,
+      },
     ];
 
     Book.findAll.mockResolvedValue(mockBooks);
 
-    const queryType = 'ItemNewAll';
-    const page = 2;
-    const pageSize = 20;
+    const result = await bookService.getBooksByQueryType('ItemNewAll', 1, 20);
 
-    //getBooksByQueryType 호출
-    const result = await bookService.getBooksByQueryType(queryType, page, pageSize);
-
-    //Book.findAll이 정확한 매개변수로 호출되었는지 확인
     expect(Book.findAll).toHaveBeenCalledWith({
+      where: { queryType: 'ItemNewAll' },
       limit: 20,
-      offset: 20,
-      where: { queryType },
+      offset: 0,
       order: [['pubDate', 'DESC']],
     });
 
-    // 빈 결과가 반환되는지 확인
     expect(result).toEqual(mockBooks);
   });
 
-  it('should handle empty results', async () => {
-    //빈 배열로 Book.findAll 반환하기
-    Book.findAll.mockResolvedValue([]);
+  it('should load books by queryType and order by salespoint when queryType is Bestseller', async () => {
+    const mockBooks = [
+      {
+        id: '1',
+        isbn: 'xxx',
+        title: 'book1',
+        author: 'author1',
+        description: 'description1',
+        cover: 'cover1',
+        stockStatus: 'xx',
+        categoryId: 'id1',
+        mileage: 1,
+        categoryName: 'cat1',
+        publisher: 'publisher1',
+        adult: true,
+        fixedPrice: true,
+        priceStandard: 100,
+        priceSales: 90,
+        customerReviewRank: 10,
+        queryType: 'Bestseller',
+        deleted: false,
+      },
+      {
+        id: '2',
+        isbn: 'xxx2',
+        title: 'book2',
+        author: 'author2',
+        description: 'description2',
+        cover: 'cover2',
+        stockStatus: 'xx2',
+        categoryId: 'id2',
+        mileage: 2,
+        categoryName: 'cat1',
+        publisher: 'publisher2',
+        adult: true,
+        fixedPrice: true,
+        priceStandard: 100,
+        priceSales: 90,
+        customerReviewRank: 10,
+        queryType: 'Bestseller',
+        deleted: false,
+      },
+    ];
 
-    const queryType = 'ItemNewAll';
-    const page = 2;
-    const pageSize = 20;
+    Book.findAll.mockResolvedValue(mockBooks);
 
-    const result = await bookService.getBooksByQueryType(queryType, page, pageSize);
+    const result = await bookService.getBooksByQueryType('Bestseller', 1, 20);
 
     expect(Book.findAll).toHaveBeenCalledWith({
+      where: { queryType: 'Bestseller' },
       limit: 20,
-      offset: 20,
-      where: { queryType },
+      offset: 0,
+      order: [['salespoint', 'DESC']],
+    });
+
+    expect(result).toEqual(mockBooks);
+  });
+
+  it('should throw an error if queryType is not provided', async () => {
+    await expect(bookService.getBooksByQueryType(null, 1, 20)).rejects.toThrow('Query type is missing');
+    await expect(bookService.getBooksByQueryType('', 1, 20)).rejects.toThrow('Query type is missing');
+    await expect(bookService.getBooksByQueryType(undefined, 1, 20)).rejects.toThrow('Query type is missing');
+  });
+
+  it('should throw an error if an invalid queryType is provided', async () => {
+    await expect(bookService.getBooksByQueryType('InvalidType', 1, 20)).rejects.toThrow('Invalid query type');
+  });
+
+  it('should return an empty array if no books are found', async () => {
+    Book.findAll.mockResolvedValue([]);
+    const result = await bookService.getBooksByQueryType('ItemNewAll', 1, 20);
+
+    expect(Book.findAll).toHaveBeenCalledWith({
+      where: { queryType: 'ItemNewAll' },
+      limit: 20,
+      offset: 0,
       order: [['pubDate', 'DESC']],
     });
 
-    //빈 경과 반환되는 지 확인
     expect(result).toEqual([]);
   });
 
-  it('should throw an error if findAll fails', async () => {
-    //Book.findAll에서 에러를 던지도록 설정
-    Book.findAll.mockRejectedValue(new Error('DB error'));
+  it('should throw an error if getting books from DB fails', async () => {
+    Book.findAll.mockRejectedValue(new Error('Database error'));
 
-    const queryType = 'ItemNewAll';
-    const page = 1;
-    const pageSize = 2;
-
-    //에러가 발생하는 지 확인
-    await expect(bookService.getBooksByQueryType(queryType, page, pageSize)).rejects.toThrow('DB error');
+    await expect(bookService.getBooksByQueryType('Bestseller', 1, 20)).rejects.toThrow('Database error');
   });
 });
