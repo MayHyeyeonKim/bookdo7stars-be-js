@@ -31,10 +31,12 @@ class BookService {
     page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
     pageSize = Number.isInteger(parsedPageSize) && pageSize > 0 ? pageSize : 20;
 
+    // const order = queryType === 'Bestseller' ? [['salespoint', 'DESC']] : [['pubDate', 'DESC']];
+
     const order = (() => {
       switch (queryType) {
         case 'Bestseller':
-          return [['salespoint', 'DESC']];
+          return [['salesPoint', 'DESC']];
         case 'ItemNewAll':
         case 'ItemNewSpecial': // 또는 [['reviewCount', 'DESC']]
         case 'BlogBest': // return [['rating', 'DESC']]; // 예: 평점 기준
@@ -47,7 +49,7 @@ class BookService {
       order,
       limit: pageSize,
       offset: (page - 1) * pageSize,
-      where: queryType,
+      where: { queryType },
     });
     return books;
   }

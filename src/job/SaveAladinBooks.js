@@ -1,10 +1,9 @@
 import cron from 'node-cron';
 import sequelize from '../config/db.js';
-
 import axios from 'axios';
 import { parseStringPromise } from 'xml2js';
 import dotenv from 'dotenv';
-// Schedule a job to run every minute
+
 dotenv.config();
 
 class AladinBooksJob {
@@ -13,22 +12,43 @@ class AladinBooksJob {
   }
 
   init() {
-    console.log('start AladinBooksJob init method');
-    cron.schedule('16 12 * * *', async () => {
+    console.log('Start AladinBooksJob init method');
+    cron.schedule('* * * * *', async () => {
       console.log('Job running every day');
       const obj = new AladinBooksJob();
-      await obj.getAladinBooks('ItemNewAll');
-      await obj.getAladinBooks('ItemNewSpecial');
-      await obj.getAladinBooks('ItemEditorChoice');
-      await obj.getAladinBooks('Bestseller');
+      ~(
+        // await obj.getAladinBooks('ItemNewAll');
+        // await obj.getAladinBooks('ItemNewSpecial');
+        // await obj.getAladinBooks('ItemEditorChoice');
+        (await obj.getAladinBooks('Bestseller'))
+      );
       await obj.getAladinBooks('BlogBest');
     });
   }
 
   async getAladinBooks(queryType) {
+    const queryTypeId = await this.getQueryTypeId(queryType);
+    if (!queryTypeId) {
+      console.error(`Invalid query type: ${queryType}`);
+      return;
+    }
+
     const totalCount = await this.getAladinBooksCountByQueryType(queryType);
     for (let i = 1; i <= Math.ceil(totalCount / 50); i++) {
-      await this.fetchAladinBooksByQueryType(queryType, i);
+      await this.fetchAladinBooksByQueryType(queryType, queryTypeId, i);
+    }
+  }
+
+  async getQueryTypeId(queryType) {
+    try {
+      const [result] = await sequelize.query(`SELECT id FROM "queryTypes" WHERE type = :queryType LIMIT 1`, {
+        replacements: { queryType },
+        type: sequelize.QueryTypes.SELECT,
+      });
+      return result ? result.id : null;
+    } catch (error) {
+      console.error(`Error fetching queryTypeId for ${queryType}:`, error);
+      return null;
     }
   }
 
@@ -39,69 +59,96 @@ class AladinBooksJob {
       const response = await axios.get(url);
       const parsedData = await parseStringPromise(response.data);
       const result = parsedData?.object?.totalResults?.[0];
-      if (result) return parseInt(result);
-      return result;
+      return result ? parseInt(result) : 0;
     } catch (error) {
       console.error('Error fetching or parsing data:', error);
+      return 0;
     }
   }
 
-  async fetchAladinBooksByQueryType(queryType, page) {
+  async fetchAladinBooksByQueryType(queryType, queryTypeId, page) {
     const ttbKey = process.env.ALADIN_TTB_KEY;
     const url = `http://www.aladin.co.kr/ttb/api/ItemList.aspx?ttbkey=${ttbKey}&QueryType=${queryType}&MaxResults=50&start=${page}&SearchTarget=Book&output=xml&Version=20131101&Cover=Big`;
-    // Fetch the data from the URL
-    const response = await axios.get(url);
 
-    // Parse the XML data
-    const parsedData = await parseStringPromise(response.data);
-    for (let i = 0; i < parsedData.object.item.length; i++) {
-      try {
+    try {
+      const response = await axios.get(url);
+      const parsedData = await parseStringPromise(response.data);
+      console.log('Parsed data:', parsedData);
+
+      for (let i = 0; i < parsedData.object.item.length; i++) {
+        const bookData = {
+          itemId: parsedData.object.item[i].$.itemId,
+          title: parsedData.object.item[i].title,
+          link: parsedData.object.item[i].link,
+          author: parsedData.object.item[i].author,
+          pubDate: parsedData.object.item[i].pubDate || null,
+          description: parsedData.object.item[i].description || null,
+          isbn: parsedData.object.item[i].isbn || null,
+          isbn13: parsedData.object.item[i].isbn13 || null,
+          priceSales: parsedData.object.item[i].priceSales || null,
+          priceStandard: parsedData.object.item[i].priceStandard || null,
+          mallType: parsedData.object.item[i].mallType || null,
+          stockStatus: parsedData.object.item[i].stockStatus || null,
+          mileage: parsedData.object.item[i].mileage || null,
+          cover: parsedData.object.item[i].cover || null,
+          categoryId: parsedData.object.item[i].categoryId || null,
+          categoryName: parsedData.object.item[i].categoryName || null,
+          publisher: parsedData.object.item[i].publisher || null,
+          salesPoint: parsedData.object.item[i].salesPoint || null,
+          adult: parsedData.object.item[i].adult || null,
+          fixedPrice: parsedData.object.item[i].fixedPrice || null,
+          customerReviewRank: parsedData.object.item[i].customerReviewRank || null,
+          queryTypeId: queryTypeId,
+        };
+
+        console.log('Inserting/updating data:', bookData);
+
         await sequelize.query(
           `
-          INSERT INTO aladinbooks (
-            itemId, title, link, author, pubDate, description, isbn, isbn13, priceSales, 
-            priceStandard, mallType, stockStatus, mileage, cover, categoryId, categoryName, 
-            publisher, salesPoint, adult, fixedPrice, customerReviewRank, queryType
+           INSERT INTO "aladinbooks" (
+            "itemId", title, link, author, "pubDate", description, isbn, isbn13, "priceSales", 
+            "priceStandard", "mallType", "stockStatus", mileage, cover, "categoryId", "categoryName", 
+            publisher, "salesPoint", adult, "fixedPrice", "customerReviewRank", "queryTypeId"
           ) VALUES (
             :itemId, :title, :link, :author, :pubDate, :description, :isbn, :isbn13, :priceSales, 
             :priceStandard, :mallType, :stockStatus, :mileage, :cover, :categoryId, :categoryName, 
-            :publisher, :salesPoint, :adult, :fixedPrice, :customerReviewRank, :queryType
+            :publisher, :salesPoint, :adult, :fixedPrice, :customerReviewRank, :queryTypeId
           )
-        `,
+          ON CONFLICT ("itemId") 
+          DO UPDATE SET 
+            title = EXCLUDED.title,
+            link = EXCLUDED.link,
+            author = EXCLUDED.author,
+            "pubDate" = EXCLUDED."pubDate",
+            description = EXCLUDED.description,
+            isbn = EXCLUDED.isbn,
+            isbn13 = EXCLUDED.isbn13,
+            "priceSales" = EXCLUDED."priceSales",
+            "priceStandard" = EXCLUDED."priceStandard",
+            "mallType" = EXCLUDED."mallType",
+            "stockStatus" = EXCLUDED."stockStatus",
+            mileage = EXCLUDED.mileage,
+            cover = EXCLUDED.cover,
+            "categoryId" = EXCLUDED."categoryId",
+            "categoryName" = EXCLUDED."categoryName",
+            publisher = EXCLUDED.publisher,
+            "salesPoint" = EXCLUDED."salesPoint",
+            adult = EXCLUDED.adult,
+            "fixedPrice" = EXCLUDED."fixedPrice",
+            "customerReviewRank" = EXCLUDED."customerReviewRank",
+            "queryTypeId" = EXCLUDED."queryTypeId"
+          `,
           {
-            replacements: {
-              itemId: parsedData.object.item[i].$.itemId,
-              title: parsedData.object.item[i].title,
-              link: parsedData.object.item[i].link,
-              author: parsedData.object.item[i].author,
-              pubDate: parsedData.object.item[i].pubDate,
-              description: parsedData.object.item[i].description,
-              isbn: parsedData.object.item[i].isbn,
-              isbn13: parsedData.object.item[i].isbn13,
-              priceSales: parsedData.object.item[i].priceSales,
-              priceStandard: parsedData.object.item[i].priceStandard,
-              mallType: parsedData.object.item[i].mallType,
-              stockStatus: parsedData.object.item[i].stockStatus,
-              mileage: parsedData.object.item[i].mileage,
-              cover: parsedData.object.item[i].cover,
-              categoryId: parsedData.object.item[i].categoryId,
-              categoryName: parsedData.object.item[i].categoryName,
-              publisher: parsedData.object.item[i].publisher,
-              salesPoint: parsedData.object.item[i].salesPoint,
-              adult: parsedData.object.item[i].adult,
-              fixedPrice: parsedData.object.item[i].fixedPrice,
-              customerReviewRank: parsedData.object.item[i].customerReviewRank,
-              queryType: queryType,
-            },
+            replacements: bookData,
             logging: false,
           },
         );
-        console.log('Success : ' + queryType + ' : ' + page + ' : ' + parsedData.object.item[i].$.itemId);
-      } catch (error) {
-        console.error(error);
+
+        console.log('Success : ' + queryType + ' : ' + page + ' : ' + bookData.itemId);
       }
+    } catch (error) {
+      console.error('Error processing data:', error);
     }
-    // Send the parsed data as JSON
   }
 }
 
