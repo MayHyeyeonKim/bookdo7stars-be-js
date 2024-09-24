@@ -1,7 +1,7 @@
-import cron from 'node-cron';
+import cron from 'node-cron'; // 시간 설정해서 주기적으로 일을 하게 만듦
 import sequelize from '../config/db.js';
 import axios from 'axios';
-import { parseStringPromise } from 'xml2js';
+import { parseStringPromise } from 'xml2js'; //xml2js는 XML이라는 파일 형식을 읽을 수 있게 도와주는 도구
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -11,19 +11,19 @@ class AladinBooksJob {
     this.init();
   }
 
-  init() {
+  async init() {
     console.log('Start AladinBooksJob init method');
-    cron.schedule('* * * * *', async () => {
-      console.log('Job running every day');
-      const obj = new AladinBooksJob();
-      ~(
-        // await obj.getAladinBooks('ItemNewAll');
-        // await obj.getAladinBooks('ItemNewSpecial');
-        // await obj.getAladinBooks('ItemEditorChoice');
-        (await obj.getAladinBooks('Bestseller'))
-      );
-      await obj.getAladinBooks('BlogBest');
-    });
+    try {
+      // console.log('Job running every day');
+      // const obj = new AladinBooksJob();
+      await this.getAladinBooks('ItemNewAll');
+      await this.getAladinBooks('ItemNewSpecial');
+      await this.getAladinBooks('ItemEditorChoice');
+      await this.getAladinBooks('Bestseller');
+      await this.getAladinBooks('BlogBest');
+    } catch (error) {
+      console.error('Error during AladinBooks job execution:', error);
+    }
   }
 
   async getAladinBooks(queryType) {
@@ -41,7 +41,8 @@ class AladinBooksJob {
 
   async getQueryTypeId(queryType) {
     try {
-      const [result] = await sequelize.query(`SELECT id FROM "queryTypes" WHERE type = :queryType LIMIT 1`, {
+      // "queryType" 컬럼명을 정확히 지정
+      const [result] = await sequelize.query(`SELECT id FROM querytypes WHERE "queryType" = :queryType LIMIT 1`, {
         replacements: { queryType },
         type: sequelize.QueryTypes.SELECT,
       });
@@ -71,9 +72,13 @@ class AladinBooksJob {
     const url = `http://www.aladin.co.kr/ttb/api/ItemList.aspx?ttbkey=${ttbKey}&QueryType=${queryType}&MaxResults=50&start=${page}&SearchTarget=Book&output=xml&Version=20131101&Cover=Big`;
 
     try {
-      const response = await axios.get(url);
+      const response = await axios.get(url, { timeout: 10000 }); // 10초 타임아웃 설정
       const parsedData = await parseStringPromise(response.data);
-      console.log('Parsed data:', parsedData);
+
+      if (!parsedData?.object?.item || parsedData.object.item.length === 0) {
+        console.error(`No items found in parsed data for ${queryType} on page ${page}`);
+        return;
+      }
 
       for (let i = 0; i < parsedData.object.item.length; i++) {
         const bookData = {
@@ -101,8 +106,9 @@ class AladinBooksJob {
           queryTypeId: queryTypeId,
         };
 
-        console.log('Inserting/updating data:', bookData);
+        // console.log('Inserting/updating data:', bookData);
 
+        // aladinbooks 테이블에 삽입/업데이트
         await sequelize.query(
           `
            INSERT INTO "aladinbooks" (
@@ -144,10 +150,31 @@ class AladinBooksJob {
           },
         );
 
+        await sequelize.query(
+          `
+          INSERT INTO bookQueryTypes ("bookId", "queryTypeId")
+          SELECT id, :queryTypeId FROM books WHERE isbn13 = :isbn13
+          ON CONFLICT DO NOTHING;
+          `,
+          {
+            replacements: {
+              queryTypeId: queryTypeId,
+              isbn13: bookData.isbn13,
+            },
+            logging: false,
+          },
+        );
+
         console.log('Success : ' + queryType + ' : ' + page + ' : ' + bookData.itemId);
       }
     } catch (error) {
-      console.error('Error processing data:', error);
+      if (error.response) {
+        console.error(`API responded with error ${error.response.status} for query type: ${queryType}, page: ${page}`);
+      } else if (error.request) {
+        console.error(`No response from API for query type: ${queryType}, page: ${page}`);
+      } else {
+        console.error(`Error during API request for ${queryType}, page: ${page}:`, error.message);
+      }
     }
   }
 }
