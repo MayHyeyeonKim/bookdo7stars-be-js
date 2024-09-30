@@ -1,6 +1,5 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
-
 const Book = sequelize.define(
   'books',
   {
@@ -31,18 +30,22 @@ const Book = sequelize.define(
     },
     pubDate: {
       type: DataTypes.DATE,
+      field: 'pub_date',
     },
     stockStatus: {
       type: DataTypes.STRING(100),
+      field: 'stock_status',
     },
     categoryId: {
       type: DataTypes.STRING(200),
+      field: 'category_id',
     },
     mileage: {
       type: DataTypes.NUMBER,
     },
     categoryName: {
       type: DataTypes.STRING(200),
+      field: 'category_name',
     },
     publisher: {
       type: DataTypes.STRING(200),
@@ -54,20 +57,20 @@ const Book = sequelize.define(
     fixedPrice: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
+      field: 'fixed_price',
     },
     priceStandard: {
       type: DataTypes.NUMBER,
       allowNull: false,
+      field: 'price_standard',
     },
     priceSales: {
       type: DataTypes.NUMBER,
+      field: 'price_sales',
     },
     customerReviewRank: {
       type: DataTypes.NUMBER,
-    },
-    queryType: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
+      field: 'customer_review_rank',
     },
     deleted: {
       type: DataTypes.BOOLEAN,
@@ -75,7 +78,7 @@ const Book = sequelize.define(
     },
   },
   {
-    timestamps: false, // Since we are managing `created_at` and `updated_at` manually
+    timestamps: false,
   },
 );
 
