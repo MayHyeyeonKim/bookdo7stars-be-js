@@ -59,8 +59,9 @@ const router = express.Router();
  */
 router.get('/', async function (req, res) {
   try {
-    const books = await bookService.getAllBooks();
-    res.status(200).json({ books: books, message: 'Books loaded successfully' });
+    const { page, pageSize } = req.query;
+    const books = await bookService.getAllBooks(page, pageSize);
+    res.status(200).json({ books: books.rows, count: books.count, message: 'Books loaded successfully' });
   } catch (err) {
     console.error('Error loading books: ', err.message);
     if (err.errors != null && err.errors[0].message != null) res.status(500).json({ message: err.errors[0].message });
@@ -231,7 +232,7 @@ router.get('/:groupName', async function (req, res) {
   } catch (err) {
     console.error('Error loading books by group name: ', err.message);
 
-    if (err.message === 'Invalid query type' || err.message === 'Query type is missing') {
+    if (err.message === 'Invalid query type') {
       return res.status(400).json({ message: err.message });
     }
 

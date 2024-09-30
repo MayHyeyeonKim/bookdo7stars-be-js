@@ -1,64 +1,132 @@
 import bookService from '../../src/services/bookService';
 import Book from '../../src/models/book';
+import BookQueryType from '../../src/models/bookQueryType';
 
-// Mock the Book model
 jest.mock('../../src/models/book');
+jest.mock('../../src/models/bookQueryType');
 
 describe('bookService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
+  // 1. 인자 없이 모든 책이 불러와지는지
   it('should load all books in Book table in the database', async () => {
-    const mockBooks = [
-      {
-        id: '1',
-        isbn: 'xxx',
-        title: 'book1',
-        author: 'author1',
-        description: 'description1',
-        cover: 'cover1',
-        stockStatus: 'xx',
-        categoryId: 'id1',
-        mileage: 1,
-        categoryName: 'cat1',
-        publisher: 'publisher1',
-        adult: true,
-        fixedPrice: true,
-        priceStandard: 100,
-        priceSales: 90,
-        customerReviewRank: 10,
-        queryType: 'queryType1',
-        deleted: false,
-      },
-      {
-        id: '2',
-        isbn: 'xxx2',
-        title: 'book2',
-        author: 'author2',
-        description: 'description2',
-        cover: 'cover2',
-        stockStatus: 'xx2',
-        categoryId: 'id2',
-        mileage: 2,
-        categoryName: 'cat1',
-        publisher: 'publisher2',
-        adult: true,
-        fixedPrice: true,
-        priceStandard: 100,
-        priceSales: 90,
-        customerReviewRank: 10,
-        queryType: 'queryType1',
-        deleted: false,
-      },
-    ];
-    Book.findAll.mockResolvedValue(mockBooks);
-
+    //mockdata
+    const mockBooks = {
+      count: 2,
+      rows: [
+        {
+          id: '1',
+          isbn: 'xxx',
+          title: 'book1',
+          author: 'author1',
+          description: 'description1',
+          cover: 'cover1',
+          stockStatus: 'xx',
+          categoryId: 'id1',
+          mileage: 1,
+          categoryName: 'cat1',
+          publisher: 'publisher1',
+          adult: true,
+          fixedPrice: true,
+          priceStandard: 100,
+          priceSales: 90,
+          customerReviewRank: 10,
+          queryType: 'queryType1',
+          deleted: false,
+        },
+        {
+          id: '2',
+          isbn: 'xxx2',
+          title: 'book2',
+          author: 'author2',
+          description: 'description2',
+          cover: 'cover2',
+          stockStatus: 'xx2',
+          categoryId: 'id2',
+          mileage: 2,
+          categoryName: 'cat1',
+          publisher: 'publisher2',
+          adult: true,
+          fixedPrice: true,
+          priceStandard: 100,
+          priceSales: 90,
+          customerReviewRank: 10,
+          queryType: 'queryType1',
+          deleted: false,
+        },
+      ],
+    };
+    //Book.findAndCountAll.mockResolevValue(mockdata)
+    Book.findAndCountAll.mockResolvedValue(mockBooks);
+    //진짜로 함수를 부르는 부분 (비동기)
     const result = await bookService.getAllBooks();
-
+    //진짜 부른 그 결과가 mockdata 같은지 확인
     expect(result).toEqual(mockBooks);
   });
 
+  // 2. 인자를 넣어서 모든 책이 불러와지는지
+  it('should load all books in Book table with pagenation', async () => {
+    const mockBooks = {
+      count: 2,
+      rows: [
+        {
+          id: '1',
+          isbn: 'xxx',
+          title: 'book1',
+          author: 'author1',
+          description: 'description1',
+          cover: 'cover1',
+          stockStatus: 'xx',
+          categoryId: 'id1',
+          mileage: 1,
+          categoryName: 'cat1',
+          publisher: 'publisher1',
+          adult: true,
+          fixedPrice: true,
+          priceStandard: 100,
+          priceSales: 90,
+          customerReviewRank: 10,
+          queryType: 'queryType1',
+          deleted: false,
+        },
+        {
+          id: '2',
+          isbn: 'xxx2',
+          title: 'book2',
+          author: 'author2',
+          description: 'description2',
+          cover: 'cover2',
+          stockStatus: 'xx2',
+          categoryId: 'id2',
+          mileage: 2,
+          categoryName: 'cat1',
+          publisher: 'publisher2',
+          adult: true,
+          fixedPrice: true,
+          priceStandard: 100,
+          priceSales: 90,
+          customerReviewRank: 10,
+          queryType: 'queryType1',
+          deleted: false,
+        },
+      ],
+    };
+    Book.findAndCountAll.mockResolvedValue(mockBooks);
+    const result = await bookService.getAllBooks(2, 50);
+    expect(Book.findAndCountAll).toHaveBeenCalledWith({
+      order: [
+        ['title', 'ASC'],
+        ['author', 'DESC'],
+      ],
+      limit: 50,
+      offset: 50,
+    });
+    expect(result).toEqual(mockBooks);
+  });
+
+  // 3. id로 그 책이 로드되는지
   it('should load a book by id in Book table in the database', async () => {
     const mockBookDetail = {
       id: 12,
@@ -80,33 +148,27 @@ describe('bookService', () => {
       queryType: 'New',
       deleted: false,
     };
-
     const spy = jest.spyOn(Book, 'findByPk').mockResolvedValue(mockBookDetail);
-
     const result = await bookService.getBookDetailById(mockBookDetail.id);
-
     expect(spy).toHaveBeenCalledWith(mockBookDetail.id);
     expect(result).toEqual(mockBookDetail);
-
-    spy.mockRestore();
   });
 
+  // 4. 책을 찾을 수 없을 때
   it('should show "Book not found" if the book is not found', async () => {
     const mockBookError = new Error('Book not found');
-
     jest.spyOn(Book, 'findByPk').mockRejectedValue(mockBookError);
-
     await expect(bookService.getBookDetailById(1)).rejects.toThrow('Book not found');
   });
 
+  // 5. 디테일페이지 로드실패시
   it('should throw an error message if getBookDetailById failed', async () => {
     const mockError = new Error('Error loading book detail');
-
     jest.spyOn(Book, 'findByPk').mockRejectedValue(mockError);
-
     await expect(bookService.getBookDetailById(1)).rejects.toThrow('Error loading book detail');
   });
 
+  // 6. 쿼리타입이 베스트셀러가 아닐 때
   it('should load books by queryType in Book table in the database and order by pubDate for non-Bestseller queryType', async () => {
     const mockBooks = [
       {
@@ -156,15 +218,22 @@ describe('bookService', () => {
     const result = await bookService.getBooksByQueryType('ItemNewAll', 1, 20);
 
     expect(Book.findAll).toHaveBeenCalledWith({
-      where: { queryType: 'ItemNewAll' },
+      include: [
+        {
+          model: BookQueryType,
+          where: { query_type: 'ItemNewAll' },
+          required: true,
+        },
+      ],
       limit: 20,
       offset: 0,
-      order: [['pubDate', 'DESC']],
+      order: [['pub_date', 'DESC']],
     });
 
     expect(result).toEqual(mockBooks);
   });
 
+  // 7. 쿼리타입이 베스트셀러일 때
   it('should load books by queryType and order by salespoint when queryType is Bestseller', async () => {
     const mockBooks = [
       {
@@ -214,42 +283,57 @@ describe('bookService', () => {
     const result = await bookService.getBooksByQueryType('Bestseller', 1, 20);
 
     expect(Book.findAll).toHaveBeenCalledWith({
-      where: { queryType: 'Bestseller' },
+      include: [
+        {
+          model: BookQueryType,
+          where: { query_type: 'Bestseller' },
+          required: true,
+        },
+      ],
       limit: 20,
       offset: 0,
-      order: [['salespoint', 'DESC']],
+      order: [['sales_point', 'DESC']],
     });
 
     expect(result).toEqual(mockBooks);
   });
 
+  // 8. 쿼리타입이 인자로 제공되지 않을 떄
   it('should throw an error if queryType is not provided', async () => {
     await expect(bookService.getBooksByQueryType(null, 1, 20)).rejects.toThrow('Query type is missing');
     await expect(bookService.getBooksByQueryType('', 1, 20)).rejects.toThrow('Query type is missing');
     await expect(bookService.getBooksByQueryType(undefined, 1, 20)).rejects.toThrow('Query type is missing');
   });
 
-  it('should throw an error if an invalid queryType is provided', async () => {
-    await expect(bookService.getBooksByQueryType('InvalidType', 1, 20)).rejects.toThrow('Invalid query type');
+  // 9. 쿼리타입이 잘못들어왔을떄
+  it('should throw an error if an invalid queryType is provied', async () => {
+    await expect(bookService.getBooksByQueryType('blabla', 1, 20)).rejects.toThrow('Invalid query type');
   });
 
+  // 10. 책이 없을 때
   it('should return an empty array if no books are found', async () => {
+    const mockBooks = [];
     Book.findAll.mockResolvedValue([]);
     const result = await bookService.getBooksByQueryType('ItemNewAll', 1, 20);
-
     expect(Book.findAll).toHaveBeenCalledWith({
-      where: { queryType: 'ItemNewAll' },
+      include: [
+        {
+          model: BookQueryType,
+          where: { query_type: 'ItemNewAll' },
+          required: true,
+        },
+      ],
       limit: 20,
       offset: 0,
-      order: [['pubDate', 'DESC']],
+      order: [['pub_date', 'DESC']],
     });
 
-    expect(result).toEqual([]);
+    expect(result).toEqual(mockBooks);
   });
 
+  // 11. 디비가 잘못되었을 때
   it('should throw an error if getting books from DB fails', async () => {
-    Book.findAll.mockRejectedValue(new Error('Database error'));
-
-    await expect(bookService.getBooksByQueryType('Bestseller', 1, 20)).rejects.toThrow('Database error');
+    Book.findAll.mockRejectedValue(new Error('DB error'));
+    await expect(bookService.getBooksByQueryType('Bestseller', 1, 20)).rejects.toThrow('DB error');
   });
 });
