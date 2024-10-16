@@ -1,5 +1,6 @@
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
+
 const Book = sequelize.define(
   'books',
   {
@@ -49,6 +50,10 @@ const Book = sequelize.define(
     },
     publisher: {
       type: DataTypes.STRING(200),
+    },
+    salesPoint: {
+      type: DataTypes.NUMBER,
+      field: 'sales_point',
     },
     adult: {
       type: DataTypes.BOOLEAN,

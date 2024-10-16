@@ -15,7 +15,7 @@ CREATE TABLE users
     status VARCHAR(50) NOT NULL,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
-)
+);
 
 insert into users (name, email, password, mobile, grade, address, adminyn, status) values ('Bob','bob@gmail.com','$2b$10$Lxlbcu3dLF0TSMSJwEs3Se.Fo8uOnbSvpWnaXKKoJRWo6gDr6V38.','+14144399310','Bronze','W Lakefield Dr.',false,'active');
 insert into users(name, email, password, mobile, grade, address, adminyn, status) values('May','may@gmail.com','$2b$10$QGNZOXbL0OLlkCqfXCgsg.Pn2rI9D/wJBpfaSh9Ap39wQgOQL9Sge','+14144399310','Bronze','30, Seongji-ro 8beon-gil, Busanjin-gu',false,'active');
@@ -52,7 +52,7 @@ CREATE TABLE book_query_types (
   query_type VARCHAR(100) NOT NULL,
   PRIMARY KEY(book_id, query_type),
   FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
-)
+);
 
 CREATE TABLE aladinbooks (
   item_id BIGINT,
@@ -117,11 +117,13 @@ BEGIN
     customer_review_rank = EXCLUDED.customer_review_rank
 
   RETURNING id INTO new_book_id;
-  INSERT INTO books_query_type (book_id, query_type) VALUES (
+
+  INSERT INTO book_query_types (book_id, query_type) VALUES (
     new_book_id, NEW.query_type
   )
   ON CONFLICT (book_id, query_type) DO NOTHING;
-  
+
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

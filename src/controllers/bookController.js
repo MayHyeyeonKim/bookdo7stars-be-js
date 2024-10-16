@@ -232,7 +232,7 @@ router.get('/:groupName', async function (req, res) {
   } catch (err) {
     console.error('Error loading books by group name: ', err.message);
 
-    if (err.message === 'Invalid query type') {
+    if (err.message === 'Invalid query type' || err.message === 'Query type is missing') {
       return res.status(400).json({ message: err.message });
     }
 
