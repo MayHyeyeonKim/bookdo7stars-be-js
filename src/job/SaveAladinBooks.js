@@ -109,11 +109,11 @@ class AladinBooksJob {
 }
 
 // AladinBooksJob 실행
-(async () => {
-  const job = new AladinBooksJob();
-  await job.getAladinBooks('ItemNewAll');
-  await job.getAladinBooks('ItemNewSpecial');
-  await job.getAladinBooks('ItemEditorChoice');
-  await job.getAladinBooks('Bestseller');
-  await job.getAladinBooks('BlogBest');
-})();
+// (async () => {
+//   const job = new AladinBooksJob();
+//   await job.getAladinBooks('ItemNewAll');
+//   await job.getAladinBooks('ItemNewSpecial');
+//   await job.getAladinBooks('ItemEditorChoice');
+//   await job.getAladinBooks('Bestseller');
+//   await job.getAladinBooks('BlogBest');
+// })();
