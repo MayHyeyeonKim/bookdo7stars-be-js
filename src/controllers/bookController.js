@@ -132,12 +132,8 @@ const router = express.Router();
 
 router.get('/', async function (req, res) {
   try {
-    console.log('Received query:', req.query);
-    const page = req.query.page || 1;
-    const pageSize = req.query.pageSize || 10;
-    const start_date = req.query.start_date ? new Date(req.query.start_date) : null;
-    const end_date = req.query.end_date ? new Date(req.query.end_date) : null;
-    const { searchTarget, searchTerm, title, author, publisher, orderTerm } = req.query;
+    const { page, pageSize, start_date, end_date, searchTarget, searchTerm, title, author, publisher, orderTerm } =
+      req.query;
     const books = await bookService.getAllBooks(
       page,
       pageSize,
