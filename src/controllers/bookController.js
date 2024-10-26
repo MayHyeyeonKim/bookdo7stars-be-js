@@ -132,7 +132,7 @@ const router = express.Router();
 
 router.get('/', async function (req, res) {
   try {
-    const { page, pageSize, start_date, end_date, searchTarget, searchTerm, title, author, publisher, orderTerm } =
+    const { page, pageSize, searchTarget, searchTerm, title, author, publisher, start_date, end_date, orderTerm } =
       req.query;
     const books = await bookService.getAllBooks(
       page,

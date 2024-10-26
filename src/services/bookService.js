@@ -1,7 +1,7 @@
 import Book from '../models/book.js';
 import BookQueryType from '../models/bookQueryType.js';
 import { QueryType } from '../enum/queryTypeEnum.js';
-import { Op } from 'sequelize';
+import { Op, literal } from 'sequelize';
 
 class BookService {
   async getAllBooks(
@@ -38,6 +38,11 @@ class BookService {
     if (publisher) {
       whereCondition.publisher = {
         [Op.like]: `%${publisher}%`,
+      };
+    }
+    if (start_date && end_date) {
+      whereCondition.pub_date = {
+        [Op.between]: [start_date, end_date],
       };
     }
     if (start_date && end_date) {
@@ -105,7 +110,7 @@ class BookService {
     return book;
   }
 
-  getOrderType(orderTerm) {
+  getOrderType(orderTerm, title) {
     let order;
     switch (orderTerm) {
       case 'sales':
@@ -126,6 +131,10 @@ class BookService {
 
       case 'name':
         order = [['title', 'ASC']];
+        break;
+
+      case 'accuracy':
+        order = [[literal(`ts_rank(to_tsvector(title), to_tsquery('${title}'))`), 'DESC']];
         break;
 
       default:
