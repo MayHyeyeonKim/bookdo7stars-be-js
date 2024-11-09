@@ -8,7 +8,7 @@ class BookService {
     page = 1,
     pageSize = 50,
     searchTarget,
-    searchTerm,
+
     title,
     author,
     publisher,
@@ -17,8 +17,6 @@ class BookService {
     orderTerm,
   ) {
     if (searchTarget) {
-      // TODO 통합검색
-      // order default로 하기.
       return;
     }
 
