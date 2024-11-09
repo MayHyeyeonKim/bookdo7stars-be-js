@@ -22,7 +22,7 @@ class BookService {
       return;
     }
 
-    const order = this.getOrderType(orderTerm);
+    const order = this.getOrderType(orderTerm, title);
 
     const whereCondition = {};
     if (title) {
@@ -45,12 +45,6 @@ class BookService {
         [Op.between]: [start_date, end_date],
       };
     }
-    if (start_date && end_date) {
-      whereCondition.pub_date = {
-        [Op.between]: [start_date, end_date],
-      };
-    }
-
     const books = await Book.findAndCountAll({
       where: whereCondition,
       order,
@@ -132,7 +126,6 @@ class BookService {
       case 'name':
         order = [['title', 'ASC']];
         break;
-
       case 'accuracy':
         order = [[literal(`ts_rank(to_tsvector(title), to_tsquery('${title}'))`), 'DESC']];
         break;

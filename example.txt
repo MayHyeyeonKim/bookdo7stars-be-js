@@ -1,145 +1,3 @@
-CREATE TABLE users
-(
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(200) NOT NULL,
-    email VARCHAR(300) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    mobile VARCHAR(100),
-    policyyn boolean,
-    grade VARCHAR(100),
-    recipient VARCHAR(200),
-    post_code VARCHAR(100),
-    address VARCHAR(200),
-    address_detail VARCHAR(200),
-    adminyn boolean DEFAULT false,
-    status VARCHAR(50) NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
-);
-
-insert into users (name, email, password, mobile, grade, address, adminyn, status) values ('Bob','bob@gmail.com','$2b$10$Lxlbcu3dLF0TSMSJwEs3Se.Fo8uOnbSvpWnaXKKoJRWo6gDr6V38.','+14144399310','Bronze','W Lakefield Dr.',false,'active');
-insert into users(name, email, password, mobile, grade, address, adminyn, status) values('May','may@gmail.com','$2b$10$QGNZOXbL0OLlkCqfXCgsg.Pn2rI9D/wJBpfaSh9Ap39wQgOQL9Sge','+14144399310','Bronze','30, Seongji-ro 8beon-gil, Busanjin-gu',false,'active');
-insert into users(name, email, password, mobile, grade, address, adminyn, status) values('Mike','mike@gmail.com','$2b$10$fEi0/io6ldjMmfvXDEuB..jZthgimo15aR7PzExuwFMnpsrLwJSB.','+14144399310','Bronze','541 W 78th St',false,'active');
-
-
-CREATE TABLE books (
-  id BIGINT PRIMARY KEY,
-  isbn VARCHAR(30) NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  author VARCHAR(255) NOT NULL,
-  pub_date DATE,
-  description VARCHAR(2000),
-  cover VARCHAR(255) NOT NULL,
-  stock_status VARCHAR(100),
-  category_id VARCHAR(200),
-  mileage NUMERIC,
-  category_name VARCHAR(200),
-  publisher VARCHAR(200),
-  sales_point NUMERIC,
-  adult BOOLEAN DEFAULT FALSE,
-  fixed_price BOOLEAN DEFAULT FALSE,
-  price_standard NUMERIC NOT NULL,
-  price_sales NUMERIC,
-  customer_review_rank NUMERIC,
-  deleted BOOLEAN DEFAULT FALSE,
-  created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
-);
-
-
-CREATE TABLE book_query_types (
-  book_id BIGINT,
-  query_type VARCHAR(100) NOT NULL,
-  PRIMARY KEY(book_id, query_type),
-  FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
-);
-
-CREATE TABLE aladinbooks (
-  item_id BIGINT,
-  title VARCHAR(255) NOT NULL,
-  link VARCHAR(1000),
-  author VARCHAR(255),
-  pub_date DATE,
-  description VARCHAR(2000),
-  isbn VARCHAR(20),
-  isbn13 VARCHAR(20),
-  price_sales NUMERIC,
-  price_standard NUMERIC NOT NULL,
-  mall_type VARCHAR(50),
-  stock_status VARCHAR(100),
-  mileage NUMERIC,
-  cover VARCHAR(1000),
-  category_id VARCHAR(20),
-  category_name VARCHAR(1000),
-  publisher VARCHAR(255),
-  sales_Point NUMERIC,
-  adult BOOLEAN DEFAULT FALSE,
-  fixed_price BOOLEAN DEFAULT FALSE,
-  customer_review_rank NUMERIC, 
-  query_type VARCHAR(200),
-  created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-  updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (item_id, query_type)
-);
-
-CREATE OR REPLACE FUNCTION sync_aladinbooks_to_books()
-RETURNS TRIGGER AS $$
-DECLARE
-  new_book_id BIGINT;
-BEGIN
-  INSERT INTO books (
-    id, isbn, title, author,pub_date, description, cover, stock_status, category_id, mileage, 
-    category_name, publisher, sales_point, adult, fixed_price, price_standard, price_sales, 
-    customer_review_rank
-  )
-  VALUES (
-    NEW.item_id, NEW.isbn13, NEW.title, NEW.author, NEW.pub_date, NEW.description, NEW.cover, NEW.stock_status, NEW.category_id, NEW.mileage,
-    NEW.category_name, NEW.publisher, NEW.sales_point, NEW.adult, NEW.fixed_price, NEW.price_standard, NEW.price_sales, 
-    NEW.customer_review_rank
-  )
-  ON CONFLICT (id) DO UPDATE SET
-    isbn = EXCLUDED.isbn,
-    title = EXCLUDED.title,
-    author = EXCLUDED.author,
-    pub_date = EXCLUDED.pub_date,
-    description = EXCLUDED.description,
-    cover = EXCLUDED.cover,
-    stock_status = EXCLUDED.stock_status,
-    category_id = EXCLUDED.category_id,
-    mileage = EXCLUDED.mileage,
-    category_name = EXCLUDED.category_name,
-    publisher = EXCLUDED.publisher,
-    sales_point = EXCLUDED.sales_point,
-    adult = EXCLUDED.adult,
-    fixed_price = EXCLUDED.fixed_price,
-    price_standard = EXCLUDED.price_standard,
-    price_sales = EXCLUDED.price_sales,
-    customer_review_rank = EXCLUDED.customer_review_rank
-
-  RETURNING id INTO new_book_id;
-  INSERT INTO book_query_types (book_id, query_type) VALUES (
-    new_book_id, NEW.query_type
-  )
-  ON CONFLICT (book_id, query_type) DO NOTHING;
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER after_insert_aladinbooks
-AFTER INSERT ON aladinbooks
-FOR EACH ROW
-EXECUTE FUNCTION sync_aladinbooks_to_books();
-
-CREATE TABLE categories
-(
-    id BIGINT PRIMARY KEY,
-    name VARCHAR(200) NOT NULL,
-    parent_id BIGINT,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
-);
-
 insert into categories (id,name) values ('0','국내도서');
 insert into categories (id,name,parent_id) values ('1230','가정/요리/뷰티','0');
 insert into categories (id,name,parent_id) values ('90452','가계부','1230');
@@ -4098,7 +3956,7 @@ insert into categories (id,name,parent_id) values ('131057','해결의법칙(초
 insert into categories (id,name,parent_id) values ('65539','개념클릭','7928');
 insert into categories (id,name,parent_id) values ('65550','초등영어교과서','7928');
 insert into categories (id,name,parent_id) values ('175052','수학도 독해가 힘이다','7928');
-insert into categories (id,name,parent_id) values ('173353','LET''S GO','7928');
+insert into categories (id,name,parent_id) values ('173353','LET'S GO','7928');
 insert into categories (id,name,parent_id) values ('11824','학습지 해법논술','7928');
 insert into categories (id,name,parent_id) values ('162180','닥터유형','7928');
 insert into categories (id,name,parent_id) values ('121891','교과서영단어','65550');
@@ -4582,7 +4440,7 @@ insert into categories (id,name,parent_id) values ('36439','EMI Encore','26261')
 insert into categories (id,name,parent_id) values ('50742','EMI New Opera','26261');
 insert into categories (id,name,parent_id) values ('26267','EMI Recommends','26261');
 insert into categories (id,name,parent_id) values ('30433','GROC 시리즈','26261');
-insert into categories (id,name,parent_id) values ('26262','Harmonia Mundi musique d''abord','26261');
+insert into categories (id,name,parent_id) values ('26262','Harmonia Mundi musique d'abord','26261');
 insert into categories (id,name,parent_id) values ('51461','HM Gold 시리즈','26261');
 insert into categories (id,name,parent_id) values ('54033','KBS 1FM 명연주 명음반 소개 음반','26261');
 insert into categories (id,name,parent_id) values ('49051','Linn SACD 샘플러','26261');
@@ -7094,7 +6952,7 @@ insert into categories (id,name,parent_id) values ('123807','Barbapapa','106183'
 insert into categories (id,name,parent_id) values ('124051','Barbie','106183');
 insert into categories (id,name,parent_id) values ('106277','Berenstain Bears','106183');
 insert into categories (id,name,parent_id) values ('106278','Biscuit','106183');
-insert into categories (id,name,parent_id) values ('106279','Blue''s Clues','106183');
+insert into categories (id,name,parent_id) values ('106279','Blue's Clues','106183');
 insert into categories (id,name,parent_id) values ('106280','Caillou','106183');
 insert into categories (id,name,parent_id) values ('106281','Charlie and Lola','106183');
 insert into categories (id,name,parent_id) values ('106282','Clifford','106183');
@@ -9059,7 +8917,7 @@ insert into categories (id,name,parent_id) values ('105946','일반','104582');
 insert into categories (id,name,parent_id) values ('105947','주해/해석','104582');
 insert into categories (id,name,parent_id) values ('105948','지혜 문학','104582');
 insert into categories (id,name,parent_id) values ('105949','Jesus/the Gospels/Acts','104582');
-insert into categories (id,name,parent_id) values ('105950','Paul''s Letters','104582');
+insert into categories (id,name,parent_id) values ('105950','Paul's Letters','104582');
 insert into categories (id,name,parent_id) values ('104583','성서 전기','97829');
 insert into categories (id,name,parent_id) values ('104584','성서 참고자료','97829');
 insert into categories (id,name,parent_id) values ('105954','사전/백과사전','104584');
@@ -14808,7 +14666,7 @@ insert into categories (id,name,parent_id) values ('45154','스피드 특강','4
 insert into categories (id,name,parent_id) values ('41090','금성출판사','38816');
 insert into categories (id,name,parent_id) values ('47162','빅뱅','41090');
 insert into categories (id,name,parent_id) values ('45446','맛있는 수능','41090');
-insert into categories (id,name,parent_id) values ('45065','Reader''s Bank','41090');
+insert into categories (id,name,parent_id) values ('45065','Reader's Bank','41090');
 insert into categories (id,name,parent_id) values ('45491','리더스','41090');
 insert into categories (id,name,parent_id) values ('45492','자습서','41090');
 insert into categories (id,name,parent_id) values ('45789','4점짜리','77687');
@@ -15452,7 +15310,7 @@ insert into categories (id,name,parent_id) values ('45456','내신올리기','41
 insert into categories (id,name,parent_id) values ('46703','이글루','41090');
 insert into categories (id,name,parent_id) values ('45943','내신최강','41090');
 insert into categories (id,name,parent_id) values ('45058','리더스','41090');
-insert into categories (id,name,parent_id) values ('45066','Reader''s Bank','41090');
+insert into categories (id,name,parent_id) values ('45066','Reader's Bank','41090');
 insert into categories (id,name,parent_id) values ('41086','금성출판사','38815');
 insert into categories (id,name,parent_id) values ('41102','김영사','38815');
 insert into categories (id,name,parent_id) values ('44935','이 한권으로 끝이다','41102');
@@ -17408,7 +17266,7 @@ insert into categories (id,name,parent_id) values ('130572','수학리더','4088
 insert into categories (id,name,parent_id) values ('174792','하루어휘','40885');
 insert into categories (id,name,parent_id) values ('174793','Grammar Zap','40885');
 insert into categories (id,name,parent_id) values ('87968','스토리텔링해법','40885');
-insert into categories (id,name,parent_id) values ('173391','LET''S GO','40885');
+insert into categories (id,name,parent_id) values ('173391','LET'S GO','40885');
 insert into categories (id,name,parent_id) values ('116287','창의력수학노크','40885');
 insert into categories (id,name,parent_id) values ('134687','수학의힘(초등)','40885');
 insert into categories (id,name,parent_id) values ('107504','학습지','40885');
@@ -17418,7 +17276,7 @@ insert into categories (id,name,parent_id) values ('44708','올림피아드','40
 insert into categories (id,name,parent_id) values ('46156','서술형.논술형','40885');
 insert into categories (id,name,parent_id) values ('45495','해법 우등생 3000제','40885');
 insert into categories (id,name,parent_id) values ('45480','초등 올백','40885');
-insert into categories (id,name,parent_id) values ('45508','Let''s Go to the English World!','40885');
+insert into categories (id,name,parent_id) values ('45508','Let's Go to the English World!','40885');
 insert into categories (id,name,parent_id) values ('45067','일등 해법수학','40885');
 insert into categories (id,name,parent_id) values ('45052','창의력 해법수학','40885');
 insert into categories (id,name,parent_id) values ('44942','학습지 해법한자','40885');
