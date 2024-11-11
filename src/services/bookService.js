@@ -4,25 +4,15 @@ import { QueryType } from '../enum/queryTypeEnum.js';
 import { Op, literal } from 'sequelize';
 
 class BookService {
-  async getAllBooks(
-    page = 1,
-    pageSize = 50,
-    searchTarget,
-
-    title,
-    author,
-    publisher,
-    start_date,
-    end_date,
-    orderTerm,
-  ) {
-    if (searchTarget) {
-      return;
+  async getAllBooks(page = 1, pageSize = 50, searchTerm, title, author, publisher, start_date, end_date, orderTerm) {
+    const whereCondition = {}; //데이터베이스에서 책을 검색할 때 적용할 필터 조건들을 담은 객체
+    if (searchTerm) {
+      whereCondition[Op.or] = [
+        { title: { [Op.like]: `%${searchTerm}%` } },
+        { author: { [Op.like]: `%${searchTerm}%` } },
+        { publisher: { [Op.like]: `%${searchTerm}%` } },
+      ]; //searchTerm이 주어졌을 때, 책의 제목(title), 저자(author), 출판사(publisher) 중 하나라도 searchTerm을 포함하면 일치하도록 조건을 설정하는 부분
     }
-
-    const order = this.getOrderType(orderTerm, title);
-
-    const whereCondition = {};
     if (title) {
       whereCondition.title = {
         [Op.like]: `%${title}%`,
@@ -43,6 +33,7 @@ class BookService {
         [Op.between]: [start_date, end_date],
       };
     }
+    const order = this.getOrderType(orderTerm, title);
     const books = await Book.findAndCountAll({
       where: whereCondition,
       order,
