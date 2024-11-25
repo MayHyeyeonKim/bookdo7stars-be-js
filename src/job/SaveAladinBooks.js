@@ -2,7 +2,6 @@ import sequelize from '../config/db.js';
 import axios from 'axios';
 import { parseStringPromise } from 'xml2js';
 import dotenv from 'dotenv';
-// dotenv 설정
 dotenv.config();
 
 class AladinBooksJob {
