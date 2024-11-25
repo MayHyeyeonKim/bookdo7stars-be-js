@@ -1,6 +1,6 @@
 import express from 'express';
 import setupSwagger from './src/config/swagger.js';
-import { userController, bookController } from './src/controllers/index.js';
+import { userController, bookController, categoryController } from './src/controllers/index.js';
 import cors from 'cors';
 import './src/job/SaveAladinBooks.js';
 import './src/models/index.js';
@@ -41,6 +41,7 @@ app.locals.pretty = true;
 
 app.use('/user', userController);
 app.use('/book', bookController);
+app.use('/category', categoryController);
 
 app.listen(4000, () => {
   console.log('Server is running on port 4000');
