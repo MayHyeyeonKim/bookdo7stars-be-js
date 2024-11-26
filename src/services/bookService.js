@@ -7,6 +7,7 @@ class BookService {
   async getAllBooks(
     page = 1,
     pageSize = 50,
+    category_id,
     searchTerm,
     title,
     author,
@@ -14,12 +15,22 @@ class BookService {
     start_date,
     end_date,
     orderTerm,
-    category_id,
   ) {
+    console.log('인자 출력: ', {
+      page,
+      pageSize,
+      category_id,
+      searchTerm,
+      title,
+      author,
+      publisher,
+      start_date,
+      end_date,
+      orderTerm,
+    });
     const whereCondition = {};
 
     if (searchTerm) {
-      // TODO 통합검색
       whereCondition[Op.or] = [
         { title: { [Op.like]: `%${searchTerm}%` } },
         { author: { [Op.like]: `%${searchTerm}%` } },
@@ -47,9 +58,11 @@ class BookService {
       };
     }
     if (category_id) {
-      whereCondition.categoryId = category_id;
+      console.log('category_id: ', category_id, 'typeof는??? ', typeof category_id);
+      whereCondition.categoryId = category_id; //그대로 사용하기
+      // whereCondition.categoryId = String(category_id); //스트링으로 변환
     }
-
+    console.log('whereCondition 멍미 => ', whereCondition);
     const order = this.getOrderType(orderTerm, title);
 
     const books = await Book.findAndCountAll({

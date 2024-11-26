@@ -135,6 +135,7 @@ router.get('/', async function (req, res) {
     const {
       page,
       pageSize,
+      category_id,
       searchTarget,
       searchTerm,
       title,
@@ -143,13 +144,25 @@ router.get('/', async function (req, res) {
       start_date,
       end_date,
       orderTerm,
-      category_id,
     } = req.query;
-
+    console.log('req.query는========>', req.query);
+    console.log('getAllBooks 호출 인자 =>', {
+      page,
+      pageSize,
+      category_id,
+      searchTarget,
+      searchTerm,
+      title,
+      author,
+      publisher,
+      start_date,
+      end_date,
+      orderTerm,
+    });
     const books = await bookService.getAllBooks(
       page,
       pageSize,
-      searchTarget,
+      category_id,
       searchTerm,
       title,
       author,
@@ -157,7 +170,6 @@ router.get('/', async function (req, res) {
       start_date,
       end_date,
       orderTerm,
-      category_id,
     );
 
     res.status(200).json({ books: books.rows, count: books.count, message: 'Books loaded successfully' });
