@@ -4,14 +4,27 @@ import { QueryType } from '../enum/queryTypeEnum.js';
 import { Op, literal } from 'sequelize';
 
 class BookService {
-  async getAllBooks(page = 1, pageSize = 50, searchTerm, title, author, publisher, start_date, end_date, orderTerm) {
-    const whereCondition = {}; //데이터베이스에서 책을 검색할 때 적용할 필터 조건들을 담은 객체
+  async getAllBooks(
+    page = 1,
+    pageSize = 50,
+    searchTerm,
+    title,
+    author,
+    publisher,
+    start_date,
+    end_date,
+    orderTerm,
+    category_id,
+  ) {
+    const whereCondition = {};
+
     if (searchTerm) {
+      // TODO 통합검색
       whereCondition[Op.or] = [
         { title: { [Op.like]: `%${searchTerm}%` } },
         { author: { [Op.like]: `%${searchTerm}%` } },
         { publisher: { [Op.like]: `%${searchTerm}%` } },
-      ]; //searchTerm이 주어졌을 때, 책의 제목(title), 저자(author), 출판사(publisher) 중 하나라도 searchTerm을 포함하면 일치하도록 조건을 설정하는 부분
+      ];
     }
     if (title) {
       whereCondition.title = {
@@ -33,7 +46,12 @@ class BookService {
         [Op.between]: [start_date, end_date],
       };
     }
+    if (category_id) {
+      whereCondition.categoryId = category_id;
+    }
+
     const order = this.getOrderType(orderTerm, title);
+
     const books = await Book.findAndCountAll({
       where: whereCondition,
       order,
@@ -101,7 +119,7 @@ class BookService {
         break;
 
       case 'lowPrice':
-        order = [['price_sales', 'DESC']];
+        order = [['price_sales', 'ASC']];
         break;
 
       case 'rank':
@@ -113,7 +131,7 @@ class BookService {
         break;
 
       case 'name':
-        order = [['title', 'ASC']];
+        order = [[literal(`title COLLATE "ko_KR.utf8"`), 'ASC']];
         break;
       case 'accuracy':
         order = [[literal(`ts_rank(to_tsvector(title), to_tsquery('${title}'))`), 'DESC']];

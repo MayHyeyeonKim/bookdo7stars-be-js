@@ -132,8 +132,20 @@ const router = express.Router();
 
 router.get('/', async function (req, res) {
   try {
-    const { page, pageSize, searchTarget, searchTerm, title, author, publisher, start_date, end_date, orderTerm } =
-      req.query;
+    const {
+      page,
+      pageSize,
+      searchTarget,
+      searchTerm,
+      title,
+      author,
+      publisher,
+      start_date,
+      end_date,
+      orderTerm,
+      category_id,
+    } = req.query;
+
     const books = await bookService.getAllBooks(
       page,
       pageSize,
@@ -145,7 +157,9 @@ router.get('/', async function (req, res) {
       start_date,
       end_date,
       orderTerm,
+      category_id,
     );
+
     res.status(200).json({ books: books.rows, count: books.count, message: 'Books loaded successfully' });
   } catch (err) {
     console.error('Error loading books: ', err.message);

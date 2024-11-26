@@ -1,5 +1,5 @@
 import express from 'express';
-import categoryService from '../services/categoryService';
+import categoryService from '../services/categoryService.js';
 
 /**
  * @swagger

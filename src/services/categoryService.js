@@ -1,4 +1,4 @@
-import sequelize from '../config/db';
+import sequelize from '../config/db.js';
 
 class CategoryService {
   async getCategories(level) {
