@@ -24,6 +24,7 @@ for (let i = 4; i <= 19589; i++) {
   }
 
   categoryMap.set(name, id);
+  //name으로 연결이 되어있으니 name이 같은게 3개가 있으면 엉망진창이 됨
 
   const parentId = findParentId(i); //
   if (parentId == null) continue;
