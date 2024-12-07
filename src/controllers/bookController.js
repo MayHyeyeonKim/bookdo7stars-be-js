@@ -144,6 +144,8 @@ router.get('/', async function (req, res) {
       start_date,
       end_date,
       orderTerm,
+      start_price,
+      end_price,
     } = req.query;
     console.log('req.query는========>', req.query);
     console.log('getAllBooks 호출 인자 =>', {
@@ -158,6 +160,8 @@ router.get('/', async function (req, res) {
       start_date,
       end_date,
       orderTerm,
+      start_price,
+      end_price,
     });
     const books = await bookService.getAllBooks(
       page,
@@ -170,6 +174,8 @@ router.get('/', async function (req, res) {
       start_date,
       end_date,
       orderTerm,
+      start_price,
+      end_price,
     );
 
     res.status(200).json({ books: books.rows, count: books.count, message: 'Books loaded successfully' });
