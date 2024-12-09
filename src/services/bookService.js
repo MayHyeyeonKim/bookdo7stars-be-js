@@ -19,6 +19,8 @@ class BookService {
       orderTerm,
       start_price,
       end_price,
+      min_review_rank,
+      max_review_rank,
     } = query;
 
     const whereCondition = {};
@@ -58,6 +60,14 @@ class BookService {
       whereCondition.price_sales = {
         [Op.between]: [start_price, end_price],
       };
+    }
+
+    if (min_review_rank && max_review_rank) {
+      whereCondition.customer_review_rank = { [Op.between]: [min_review_rank, max_review_rank] };
+    } else if (min_review_rank) {
+      whereCondition.customer_review_rank = { [Op.gte]: min_review_rank };
+    } else if (max_review_rank) {
+      whereCondition.customer_review_rank = { [Op.lte]: max_review_rank };
     }
 
     const order = this.getOrderType(orderTerm, title);
