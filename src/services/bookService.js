@@ -4,23 +4,10 @@ import { QueryType } from '../enum/queryTypeEnum.js';
 import { Op, literal } from 'sequelize';
 
 class BookService {
-  async getAllBooks(
-    page = 1,
-    pageSize = 50,
-    category_id,
-    searchTerm,
-    title,
-    author,
-    publisher,
-    start_date,
-    end_date,
-    orderTerm,
-    start_price,
-    end_price,
-  ) {
-    console.log('인자 출력: ', {
-      page,
-      pageSize,
+  async getAllBooks(query) {
+    const {
+      page = 1,
+      pageSize = 50,
       category_id,
       searchTerm,
       title,
@@ -31,10 +18,11 @@ class BookService {
       orderTerm,
       start_price,
       end_price,
-    });
-    const whereCondition = {};
+    } = query;
 
+    const whereCondition = {};
     if (searchTerm) {
+      // TODO 통합검색
       whereCondition[Op.or] = [
         { title: { [Op.like]: `%${searchTerm}%` } },
         { author: { [Op.like]: `%${searchTerm}%` } },
@@ -56,16 +44,22 @@ class BookService {
         [Op.like]: `%${publisher}%`,
       };
     }
+    if (category_id) {
+      whereCondition.categoryId = category_id;
+    }
     if (start_date && end_date) {
       whereCondition.pub_date = {
         [Op.between]: [start_date, end_date],
       };
     }
-    if (category_id) {
-      whereCondition.categoryId = category_id;
-    }
-    const order = this.getOrderType(orderTerm, title);
 
+    if (start_price && end_price) {
+      whereCondition.price_sales = {
+        [Op.between]: [start_price, end_price],
+      };
+    }
+
+    const order = this.getOrderType(orderTerm, title);
     const books = await Book.findAndCountAll({
       where: whereCondition,
       order,
@@ -145,7 +139,7 @@ class BookService {
         break;
 
       case 'name':
-        order = [[literal(`title COLLATE "ko_KR.utf8"`), 'ASC']];
+        order = [[literal(`title COLLATE "ko-KR-x-icu"`), 'ASC']];
         break;
       case 'accuracy':
         order = [[literal(`ts_rank(to_tsvector(title), to_tsquery('${title}'))`), 'DESC']];

@@ -14,75 +14,11 @@ const router = express.Router();
  * @swagger
  * /book:
  *   get:
- *     summary: "데이터베이스에 있는 전체 도서 목록을 불러옵니다. 쿼리 파라미터에 따라 도서를 검색할 수 있습니다."
- *     tags:
- *       - Books
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           example: 1
- *         description: "페이지 번호"
- *       - in: query
- *         name: pageSize
- *         schema:
- *           type: integer
- *           example: 10
- *         description: "한 페이지에 불러올 도서 수"
- *       - in: query
- *         name: searchTarget
- *         schema:
- *           type: string
- *           example: title
- *         description: "검색 대상 (예: title, author, publisher)"
- *       - in: query
- *         name: searchTerm
- *         schema:
- *           type: string
- *           example: JavaScript
- *         description: "검색어"
- *       - in: query
- *         name: title
- *         schema:
- *           type: string
- *           example: "JavaScript: The Good Parts"
- *         description: "도서 제목"
- *       - in: query
- *         name: author
- *         schema:
- *           type: string
- *           example: "Douglas Crockford"
- *         description: "도서 저자"
- *       - in: query
- *         name: publisher
- *         schema:
- *           type: string
- *           example: "O'Reilly Media"
- *         description: "출판사"
- *       - in: query
- *         name: start_date
- *         schema:
- *           type: string
- *           format: date
- *           example: "2022-01-01"
- *         description: "출간 시작일"
- *       - in: query
- *         name: end_date
- *         schema:
- *           type: string
- *           format: date
- *           example: "2022-12-31"
- *         description: "출간 종료일"
- *       - in: query
- *         name: orderTerm
- *         schema:
- *           type: string
- *           example: "priceStandard"
- *         description: "정렬 기준 (예: priceStandard, title)"
+ *     summary: 데이터베이스에 있는 전체 도서 목록을 불러옵니다.
+ *     tags: [Get all books]
  *     responses:
  *       200:
- *         description: "전체 도서 목록이 성공적으로 불려졌습니다."
+ *         description: 전체 도서 목록이 성공적으로 불려졌습니다.
  *         content:
  *           application/json:
  *             schema:
@@ -90,35 +26,27 @@ const router = express.Router();
  *               properties:
  *                 books:
  *                   type: array
- *                   description: "book 객체의 배열"
- *                   items:
- *                     type: object
- *                     properties:
- *                       title:
- *                         type: string
- *                         example: "JavaScript: The Good Parts"
- *                       isbn:
- *                         type: string
- *                         example: "9780596517748"
- *                       author:
- *                         type: string
- *                         example: "Douglas Crockford"
- *                       cover:
- *                         type: string
- *                         example: "https://example.com/cover.jpg"
- *                       priceStandard:
- *                         type: number
- *                         example: 100
- *                 count:
- *                   type: integer
- *                   description: "전체 도서의 개수"
- *                   example: 100
+ *                   description: book 객체의 배열
+ *                   example: [{
+ *                      "title": "book1",
+ *                      "isbn": "xxx",
+ *                      "author": "author1",
+ *                      "cover": "cover1",
+ *                      "priceStandard": 100
+ *                    },
+ *                    {
+ *                      "title": "book2",
+ *                      "isbn": "xxx2",
+ *                      "author": "author2",
+ *                      "cover": "cover2",
+ *                      "priceStandard": 100
+ *                    }]
  *                 message:
  *                   type: string
- *                   description: "응답 메세지"
- *                   example: "Books loaded successfully"
+ *                   description: 응답 메세지
+ *                   example: Books loaded successfully
  *       500:
- *         description: "서버 오류"
+ *         description: 서버 오류
  *         content:
  *           application/json:
  *             schema:
@@ -126,58 +54,12 @@ const router = express.Router();
  *               properties:
  *                 message:
  *                   type: string
- *                   description: "오류 메세지"
- *                   example: "Error loading books"
+ *                   description: 오류 메세지
+ *                   example: Error loading Books
  */
-
 router.get('/', async function (req, res) {
   try {
-    const {
-      page,
-      pageSize,
-      category_id,
-      searchTarget,
-      searchTerm,
-      title,
-      author,
-      publisher,
-      start_date,
-      end_date,
-      orderTerm,
-      start_price,
-      end_price,
-    } = req.query;
-    console.log('req.query는========>', req.query);
-    console.log('getAllBooks 호출 인자 =>', {
-      page,
-      pageSize,
-      category_id,
-      searchTarget,
-      searchTerm,
-      title,
-      author,
-      publisher,
-      start_date,
-      end_date,
-      orderTerm,
-      start_price,
-      end_price,
-    });
-    const books = await bookService.getAllBooks(
-      page,
-      pageSize,
-      category_id,
-      searchTerm,
-      title,
-      author,
-      publisher,
-      start_date,
-      end_date,
-      orderTerm,
-      start_price,
-      end_price,
-    );
-
+    const books = await bookService.getAllBooks(req.query);
     res.status(200).json({ books: books.rows, count: books.count, message: 'Books loaded successfully' });
   } catch (err) {
     console.error('Error loading books: ', err.message);
@@ -365,49 +247,41 @@ router.get('/:groupName', async function (req, res) {
  * @swagger
  * /book/search/{isbn}:
  *   get:
- *     summary: ISBN을 기준으로 도서를 검색합니다.
  *     tags: [Get book by ISBN]
+ *     summary: Find book by ISBN
+ *     description: Returns book by ISBN from the database.
+ *     operationId: getBookByIsbn
  *     parameters:
- *       - in: path
- *         name: isbn
+ *       - name: isbn
+ *         in: path
+ *         description: The type of book to fetch isbn
+ *         required: true
  *         schema:
  *           type: string
- *         required: true
- *         description: 검색할 도서의 ISBN 번호
- *         example: "9780596517748"
  *     responses:
  *       200:
- *         description: 요청한 ISBN을 가진 도서를 성공적으로 불러왔습니다.
+ *         description: Book by isbn loaded successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 book:
+ *                 books:
  *                   type: object
- *                   description: 도서 객체
- *                   properties:
- *                     title:
- *                       type: string
- *                       example: "JavaScript: The Good Parts"
- *                     isbn:
- *                       type: string
- *                       example: "9780596517748"
- *                     author:
- *                       type: string
- *                       example: "Douglas Crockford"
- *                     cover:
- *                       type: string
- *                       example: "https://example.com/cover.jpg"
- *                     priceStandard:
- *                       type: number
- *                       example: 100
+ *                   description: a book objects
+ *                   example: {
+ *                      "title": "book1",
+ *                      "isbn": "xxx",
+ *                      "author": "author1",
+ *                      "cover": "cover1",
+ *                      "priceStandard": 100
+ *                    }
  *                 message:
  *                   type: string
- *                   description: 응답 메세지
- *                   example: "Book with 9780596517748 loaded successfully"
- *       404:
- *         description: 해당 ISBN의 도서를 찾을 수 없습니다.
+ *                   description: response message
+ *                   example: Book with 123456789 loaded successfully
+ *       400:
+ *         description: Invalid isbn supplied
  *         content:
  *           application/json:
  *             schema:
@@ -415,10 +289,9 @@ router.get('/:groupName', async function (req, res) {
  *               properties:
  *                 message:
  *                   type: string
- *                   description: 에러 메세지
- *                   example: "Book not found"
+ *                   example: Invalid isbn
  *       500:
- *         description: 서버 오류
+ *         description: Internal server error
  *         content:
  *           application/json:
  *             schema:
@@ -426,8 +299,8 @@ router.get('/:groupName', async function (req, res) {
  *               properties:
  *                 message:
  *                   type: string
- *                   description: 에러 메세지
- *                   example: "Error loading book"
+ *                   description: Error message
+ *                   example: Error loading book by isbn
  */
 
 router.get('/search/:isbn', async function (req, res) {
@@ -435,13 +308,13 @@ router.get('/search/:isbn', async function (req, res) {
     const isbn = req.params.isbn;
     const book = await bookService.getBookByIsbn(isbn);
     res.status(200).json({ book, message: `Book with ${isbn} loaded successfully` });
-  } catch (error) {
-    console.error('Error loading book: ', error.message);
-    if (error.errors != null && error.errors[0].message != null) {
-      return res.status(500).json({ message: error.errors[0].message });
+  } catch (err) {
+    console.error('Error loading book: ', err.message);
+    if (err.errors != null && err.errors[0].message != null) {
+      return res.status(500).json({ message: err.errors[0].message });
     }
-    if (error.message === 'Book not found') {
-      return res.status(404).json({ message: error.message });
+    if (err.message === 'Book not found') {
+      return res.status(404).json({ message: err.message });
     }
     res.status(500).json({ message: 'Error loading book' });
   }
