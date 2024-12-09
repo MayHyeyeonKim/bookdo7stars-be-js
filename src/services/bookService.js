@@ -1,4 +1,5 @@
 import Book from '../models/book.js';
+import Banner from '../models/banner.js';
 import BookQueryType from '../models/bookQueryType.js';
 import { QueryType } from '../enum/queryTypeEnum.js';
 import { Op, literal } from 'sequelize';
@@ -152,6 +153,60 @@ class BookService {
         ];
     }
     return order;
+  }
+
+  async getBooksByQueryTypeAndCategoryIds(queryType, categoryIds, page = 1, pageSize = 20) {
+    if (!queryType) {
+      throw new Error('Query type is missing');
+    }
+
+    if (!categoryIds) {
+      throw new Error('categoryIdsare missing');
+    }
+
+    if (!Object.values(QueryType).includes(queryType)) {
+      throw new Error('Invalid query type');
+    }
+
+    const parsedPage = parseInt(page);
+    const parsedPageSize = parseInt(pageSize);
+
+    page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+    pageSize = Number.isInteger(parsedPageSize) && parsedPageSize > 0 ? parsedPageSize : 20;
+
+    const books = await Book.findAll({
+      include: [
+        {
+          model: BookQueryType,
+          where: {
+            query_type: queryType,
+          }, // Filter by query_type
+          required: true, // INNER JOIN
+        },
+      ],
+      where: {
+        category_id: {
+          [Op.in]: categoryIds,
+        },
+      },
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+    });
+
+    return books;
+  }
+
+  async getBanners(baseUrl) {
+    const banners = await Banner.findAll();
+    if (!banners) {
+      throw new Error('Banner not found');
+    }
+
+    for (let item of banners) {
+      item.cover = `${baseUrl}/images/banner/${item.cover}`;
+    }
+
+    return banners;
   }
 }
 

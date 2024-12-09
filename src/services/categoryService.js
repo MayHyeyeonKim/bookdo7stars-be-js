@@ -39,6 +39,30 @@ class CategoryService {
 
     return result;
   }
+
+  async getChildrenIds(parentId) {
+    const categoriesHierarchy = await sequelize.query(
+      `WITH RECURSIVE categories_hierarchy AS (
+        SELECT id, parent_id
+        FROM categories
+        WHERE id = :parentId
+        UNION ALL
+        SELECT o.id, o.parent_id
+        FROM categories o
+        JOIN categories_hierarchy oh ON o.parent_id = oh.id
+      )
+      SELECT id FROM categories_hierarchy`,
+      {
+        replacements: { parentId },
+      },
+    );
+
+    let result = [];
+    for (let category of categoriesHierarchy[0]) {
+      result.push(category.id);
+    }
+    return result;
+  }
 }
 
 export default new CategoryService();

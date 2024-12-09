@@ -8,6 +8,8 @@ import dotenv from 'dotenv';
 import passport from 'passport';
 import session from 'express-session';
 import bodyParser from 'body-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const app = express();
 app.use(
@@ -31,6 +33,10 @@ app.use(
   }),
 );
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(passport.initialize());
