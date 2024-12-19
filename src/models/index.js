@@ -4,8 +4,8 @@ import Cart from './cart.js';
 import User from './user.js';
 
 Book.hasMany(BookQueryType, {
-  foreignKey: 'book_id',
-  sourceKey: 'id',
+  foreignKey: 'book_id', //foreignKey: 참조되는 테이블(여기서는 BookQueryType)에 생성될 외래 키.
+  sourceKey: 'id', //참조하는 테이블(여기서는 Book)에서 사용할 키(기본 키 또는 고유 키).
 });
 
 Cart.belongsTo(Book, { foreignKey: 'book_id' });
