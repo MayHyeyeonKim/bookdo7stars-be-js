@@ -37,7 +37,21 @@ class CartService {
 
     try {
       //sequelize의 메서드(예: findOne, findAll)는 옵션 객체를 인자로 받습니다.
-      const existingCart = await Cart.findOne({ where: { bookId: bookId, userId: userId } });
+      const existingCart = await Cart.findOne({
+        where: { bookId: bookId, userId: userId },
+        attributes: { exclude: ['bookId', 'userId', 'book_id', 'user_id'] },
+        include: [
+          {
+            model: Book,
+            as: 'book',
+          },
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'name', 'email'],
+          },
+        ],
+      });
       if (existingCart) {
         console.log(existingCart);
         existingCart.quantity += quantity;
@@ -49,7 +63,23 @@ class CartService {
         quantity: quantity,
         userId: userId,
       };
-      return await Cart.create(newCartItem);
+      const newItem = await Cart.create(newCartItem);
+      const newItemWithBookInfo = await Cart.findOne({
+        where: { bookId: newItem.bookId, userId: newItem.userId },
+        attributes: { exclude: ['bookId', 'userId', 'book_id', 'user_id'] },
+        include: [
+          {
+            model: Book,
+            as: 'book',
+          },
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'name', 'email'],
+          },
+        ],
+      });
+      return newItemWithBookInfo;
     } catch (error) {
       console.error('Error in addItemToCart:', error.message);
       throw error;

@@ -58,20 +58,16 @@ router.get('/', async function (req, res) {
 router.post('/', async function (req, res) {
   try {
     console.log('/cart/포스트: ', req.body);
-    const { bookId, quantity, user } = req.body;
-    console.log('bookId와 quantity는? ', bookId, quantity);
+    const { bookId, quantity } = req.body;
+    console.log('req.session: ', req.session);
 
-    const userFromSession = req.session.passport.user;
-    console.log('user는 이렇게 들어온다: ', user);
-    if (userFromSession.name !== user.name) {
-      throw new Error('user from req.body does not match with the user from session');
-    }
-    console.log('userFromSession.id: ', userFromSession.id);
+    const userFromSession = req.session?.passport?.user;
+    console.log('user는 이렇게 들어온다: ', userFromSession.id);
 
     const cartItem = await cartService.addItemToCart(bookId, quantity, userFromSession.id);
-    res.status(200).json({ cartItem, message: 'Cart item successfully added' });
+    res.status(200).json({ cartItem, message: `${cartItem.book.title}` + ' is successfully added' });
   } catch (err) {
-    res.status(500).json({ message: 'Error loading cart' });
+    res.status(500).json({ message: err.message });
   }
 });
 
