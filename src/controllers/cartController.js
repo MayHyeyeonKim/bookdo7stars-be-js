@@ -82,9 +82,31 @@ router.put('/:id', async function (req, res) {
 
 router.delete('/:id', async function (req, res) {
   try {
-    console.log('/cart/:id');
+    console.log('delete시작!!!!!!!!!!');
+    console.log('req.session는??', req.session);
+
+    /**
+     * 1. 세션에서 사용자 Id 가져오기
+     * 2. 파라미터에 붙어온 삭제할 아이템id 가져오기
+     * 3. 서비스에 요청하여 아이템을 삭제 처리한다
+     * 4. 결과에 따라 응답을 처리한다.
+     */
+
+    const userFromSession = req.session?.passport?.user;
+    console.log('User from session:', userFromSession);
+    const itemId = req.params.id;
+    if (!itemId) {
+      return res.status(400).json({ message: 'Bad Request: Missing item ID' });
+    }
+    const result = await cartService.deleteItemFromCart(itemId, userFromSession.id);
+
+    if (result) {
+      res.status(200).json({ message: `Item with ID ${itemId} was successfully deleted` });
+    } else {
+      res.status(404).json({ message: `Item with ID ${itemId} not found in cart` });
+    }
   } catch (err) {
-    res.status(500).json({ message: 'Error loading cart' });
+    res.status(500).json({ message: `Error deleting item: ${err.message}` });
   }
 });
 

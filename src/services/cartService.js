@@ -86,6 +86,26 @@ class CartService {
       throw err;
     }
   }
+
+  async deleteItemFromCart(bookId, userId) {
+    try {
+      /**
+       * 1. db에서 아이템 확인하고
+       * 2. 아이템 삭제하기
+       */
+      const item = await Cart.findOne({ where: { bookId: bookId, userId: userId } });
+      if (!item) {
+        return false;
+      }
+      await Cart.destroy({
+        where: { bookId: bookId, userId: userId },
+      });
+      return true;
+    } catch (error) {
+      console.error('Error in deleteItemFromCart: ', error.message);
+      throw new Error('Error deleting item from cart');
+    }
+  }
 }
 
 export default new CartService();
