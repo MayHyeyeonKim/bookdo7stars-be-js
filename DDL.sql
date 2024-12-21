@@ -131,6 +131,17 @@ AFTER INSERT ON aladinbooks
 FOR EACH ROW
 EXECUTE FUNCTION sync_aladinbooks_to_books();
 
+CREATE TABLE carts (
+  id SERIAL PRIMARY KEY,
+  book_id INTEGER NOT NULL,
+  quantity INTEGER NOT NULL CHECK (quantity >= 1),
+  user_id INTEGER,
+
+  FOREIGN KEY (book_id) REFERENCES books(id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+)
+
+
 CREATE TABLE categories
 (
     id BIGINT PRIMARY KEY,
