@@ -20,6 +20,7 @@ app.use(
 );
 
 dotenv.config();
+// 요청(req) 객체에 session 속성을 추가하며, 이를 통해 각 요청마다 세션을 생성하거나 기존 세션을 가져올 수 있도록 처리
 app.use(
   session({
     secret: 'your_secret_key',

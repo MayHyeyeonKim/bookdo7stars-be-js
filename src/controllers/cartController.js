@@ -1,5 +1,5 @@
 import express from 'express';
-import cartService from '../services/cartService';
+import cartService from '../services/cartService.js';
 
 /**
  * @swagger
@@ -47,7 +47,7 @@ router.get('/', async function (req, res) {
     if (!userFromSession) {
       throw new Error('user from session is not found');
     }
-    console.log('userFromSession이 어떻게 들어와?', userFromSession);
+    console.log(userFromSession.id);
     const cartItems = await cartService.getAllItemsInCart(userFromSession.id);
     res.status(200).json({ cartItems, message: 'CartItems successfully loaded' });
   } catch (err) {
@@ -57,14 +57,15 @@ router.get('/', async function (req, res) {
 
 router.post('/', async function (req, res) {
   try {
-    console.log('/cart/포스트: ', req.body);
+    console.log('/cart/', req.body);
     const { bookId, quantity } = req.body;
-    console.log('req.session: ', req.session);
+    console.log('req.session는??', req.session);
 
     const userFromSession = req.session?.passport?.user;
-    console.log('user는 이렇게 들어온다: ', userFromSession.id);
+    console.log('userFromSession은 뭐지?', userFromSession.id);
 
     const cartItem = await cartService.addItemToCart(bookId, quantity, userFromSession.id);
+    console.log('cartItem', cartItem);
     res.status(200).json({ cartItem, message: `${cartItem.book.title}` + ' is successfully added' });
   } catch (err) {
     res.status(500).json({ message: err.message });

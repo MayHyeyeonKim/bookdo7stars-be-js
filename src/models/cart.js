@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
-import sequelize from '../config/db';
-import Book from './book';
-import User from './user';
+import sequelize from '../config/db.js';
+import Book from './book.js';
+import User from './user.js';
 
 const Cart = sequelize.define(
   'carts',
@@ -41,4 +41,5 @@ const Cart = sequelize.define(
     timestamps: false,
   },
 );
+
 export default Cart;

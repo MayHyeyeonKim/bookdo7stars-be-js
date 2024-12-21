@@ -1,6 +1,7 @@
 import Cart from '../models/cart.js';
 import Book from '../models/book.js';
 import User from '../models/user.js';
+
 class CartService {
   async getAllItemsInCart(userId) {
     try {
@@ -20,15 +21,15 @@ class CartService {
         ],
       });
     } catch (err) {
-      console.error(err.message);
+      console.err(err.message);
     }
   }
 
   async addItemToCart(bookId, quantity, userId) {
-    console.log('cartService.addItemToCart예요! ', bookId, quantity, userId);
+    console.log('SERVICE', bookId, quantity, userId);
 
     if (!bookId || !quantity) {
-      throw new Error('bookId and quantity are requied');
+      throw new Error('bookId and quantity are required');
     }
 
     if (quantity < 1) {
@@ -36,7 +37,6 @@ class CartService {
     }
 
     try {
-      //sequelize의 메서드(예: findOne, findAll)는 옵션 객체를 인자로 받습니다.
       const existingCart = await Cart.findOne({
         where: { bookId: bookId, userId: userId },
         attributes: { exclude: ['bookId', 'userId', 'book_id', 'user_id'] },
@@ -79,10 +79,11 @@ class CartService {
           },
         ],
       });
+
       return newItemWithBookInfo;
-    } catch (error) {
-      console.error('Error in addItemToCart:', error.message);
-      throw error;
+    } catch (err) {
+      console.error('Error in addItemToCart:', err.message);
+      throw err;
     }
   }
 }
