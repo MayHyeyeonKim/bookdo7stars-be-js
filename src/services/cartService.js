@@ -106,6 +106,22 @@ class CartService {
       throw new Error('Error deleting item from cart');
     }
   }
+
+  async updateItemQuantity(bookId, quantity, userId) {
+    try {
+      const cartItem = await Cart.findOne({ whrere: { bookId, userId } });
+      if (!cartItem) {
+        return null;
+      }
+
+      cartItem.quantity = quantity;
+      await cartItem.save();
+      return cartItem;
+    } catch (error) {
+      console.error('Error updating item quantity', error.message);
+      throw new Error('Failed to update cart item quantity');
+    }
+  }
 }
 
 export default new CartService();

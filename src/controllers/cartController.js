@@ -74,8 +74,25 @@ router.post('/', async function (req, res) {
 
 router.put('/:id', async function (req, res) {
   try {
-    console.log('/cart/:id');
+    console.log('백엔드 카트 수량 업데이트 시작!');
+    const userFromSession = req.session?.passport?.user;
+    console.log('1. userFromSession은 이렇게 생겼다. => ', userFromSession);
+    const itemId = req.params.id;
+    const { quantity } = req.body;
+    console.log(`2. itemId는 => ${itemId}이고, quantity은 => ${quantity}이다`);
+
+    if (!userFromSession || !itemId || !quantity) {
+      return res.status(400).json({ message: 'Bad Request: Missing parameters' });
+    }
+
+    const updatedCartItem = await cartService.updateItemQuantity(itemId, quantity, userFromSession);
+    if (updatedCartItem) {
+      res.status(200).json({ cartItem: updatedCartItem, message: 'Quantity updated successfully' });
+    } else {
+      res.status(400).json({ message: 'Cart item not found' });
+    }
   } catch (err) {
+    console.error('Error updating cart item quantity: ', err.message);
     res.status(500).json({ message: 'Error loading cart' });
   }
 });
@@ -101,7 +118,7 @@ router.delete('/:id', async function (req, res) {
     const result = await cartService.deleteItemFromCart(itemId, userFromSession.id);
 
     if (result) {
-      res.status(200).json({ message: `Item with ID ${itemId} was successfully deleted` });
+      res.status(200).json({ itemId: itemId, message: `Item with ID ${itemId} was successfully deleted` });
     } else {
       res.status(404).json({ message: `Item with ID ${itemId} not found in cart` });
     }
