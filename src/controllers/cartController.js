@@ -118,7 +118,7 @@ router.delete('/:id', async function (req, res) {
     const result = await cartService.deleteItemFromCart(itemId, userFromSession.id);
 
     if (result) {
-      res.status(200).json({ itemId: itemId, message: `Item with ID ${itemId} was successfully deleted` });
+      res.status(200).json({ bookId: itemId, message: `Item with ID ${itemId} was successfully deleted` });
     } else {
       res.status(404).json({ message: `Item with ID ${itemId} not found in cart` });
     }
