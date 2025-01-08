@@ -466,4 +466,92 @@ router.get('/search/:isbn', async function (req, res) {
   }
 });
 
+/**
+ * @swagger
+ * /book/category/{categoryId}:
+ *   get:
+ *     tags: [Get books by CategoryId]
+ *     summary: Find books by CategoryId
+ *     description: Returns books by CategoryId from the database.
+ *     operationId: getBooksByCategoryId
+ *     parameters:
+ *       - name: CategoryId
+ *         in: path
+ *         description: The type of book to fetch CategoryId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Books by CategoryId loaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 books:
+ *                   type: array
+ *                   description: book 객체의 배열
+ *                   example: [{
+ *                      "title": "book1",
+ *                      "isbn": "xxx",
+ *                      "author": "author1",
+ *                      "cover": "cover1",
+ *                      "categoryId": "cat1",
+ *                      "priceStandard": 100
+ *                    },
+ *                    {
+ *                      "title": "book2",
+ *                      "isbn": "xxx2",
+ *                      "author": "author2",
+ *                      "cover": "cover2",
+ *                      "categoryId": "cat1",
+ *                      "priceStandard": 100
+ *                    }]
+ *                 message:
+ *                   type: string
+ *                   description: 응답 메세지
+ *                   example: Books loaded successfully
+ *       400:
+ *         description: Invalid CategoryId supplied
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Invalid CategoryId
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message
+ *                   example: Error loading book by CategoryId
+ */
+router.get('/category/:categoryId', async function (req, res) {
+  try {
+    const categoryId = req.params.categoryId;
+    const { page, pageSize, orderTerm, categoryName } = req.query;
+    const childrenIds = await categoryService.getChildrenIds(categoryId);
+
+    const books = await bookService.getBooksByCategoryId(childrenIds, page, pageSize, orderTerm, categoryName);
+    res.status(200).json({ books, message: `Books with ${categoryId} loaded successfully` });
+  } catch (err) {
+    console.error('Error loading books: ', err.message);
+    if (err.errors != null && err.errors[0].message != null) {
+      return res.status(500).json({ message: err.errors[0].message });
+    }
+    if (err.message === 'Books not found') {
+      return res.status(404).json({ message: err.message });
+    }
+    res.status(500).json({ message: 'Error loading books' });
+  }
+});
+
 export default router;

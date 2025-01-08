@@ -19,8 +19,8 @@ class BookService {
       orderTerm,
       start_price,
       end_price,
-      min_review_rank,
-      max_review_rank,
+      start_rate,
+      end_rate,
     } = query;
 
     const whereCondition = {};
@@ -62,12 +62,10 @@ class BookService {
       };
     }
 
-    if (min_review_rank && max_review_rank) {
-      whereCondition.customer_review_rank = { [Op.between]: [min_review_rank, max_review_rank] };
-    } else if (min_review_rank) {
-      whereCondition.customer_review_rank = { [Op.gte]: min_review_rank };
-    } else if (max_review_rank) {
-      whereCondition.customer_review_rank = { [Op.lte]: max_review_rank };
+    if (start_rate && end_rate) {
+      whereCondition.customer_review_rank = {
+        [Op.between]: [start_rate, end_rate],
+      };
     }
 
     const order = this.getOrderType(orderTerm, title);
@@ -171,7 +169,7 @@ class BookService {
     }
 
     if (!categoryIds) {
-      throw new Error('categoryIdsare missing');
+      throw new Error('categoryIds are missing');
     }
 
     if (!Object.values(QueryType).includes(queryType)) {
@@ -217,6 +215,27 @@ class BookService {
     }
 
     return banners;
+  }
+
+  async getBooksByCategoryId(categoryIds, page = 1, pageSize = 20, orderTerm, categoryName) {
+    const parsedPage = parseInt(page);
+    const parsedPageSize = parseInt(pageSize);
+
+    page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+    pageSize = Number.isInteger(parsedPageSize) && parsedPageSize > 0 ? parsedPageSize : 20;
+    const order = this.getOrderType(orderTerm, categoryName);
+    const books = await Book.findAndCountAll({
+      where: {
+        category_id: {
+          [Op.in]: categoryIds,
+        },
+      },
+      order,
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+    });
+
+    return books;
   }
 }
 

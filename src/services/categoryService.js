@@ -1,4 +1,5 @@
 import sequelize from '../config/db.js';
+import Category from '../models/category.js';
 
 class CategoryService {
   async getCategories(level) {
@@ -62,6 +63,67 @@ class CategoryService {
       result.push(category.id);
     }
     return result;
+  }
+  async getCategoriesById(id) {
+    const categoriesHierarchy = await sequelize.query(
+      `WITH RECURSIVE categories_hierarchy AS (SELECT id, name, parent_id, 
+      (SELECT COUNT(*) FROM categories b WHERE b.parent_id = a.id) AS count
+      FROM categories a
+      WHERE id = :id
+
+      UNION ALL
+
+      SELECT
+        c.id,
+        c.name,
+        c.parent_id,
+        (SELECT COUNT(*) FROM categories b WHERE b.parent_id = c.id) AS count
+      FROM categories c
+      JOIN categories_hierarchy ch ON c.id = ch.parent_id
+      WHERE c.parent_id IS NOT NULL
+    )
+      SELECT id, name, parent_id, count
+      FROM categories_hierarchy`,
+      {
+        replacements: { id },
+      },
+    );
+    let result = [];
+    for (let category of categoriesHierarchy[0]) {
+      result.push(category.id);
+    }
+    let categories = new Map();
+    for (let i = result.length - 1; i >= 0; i--) {
+      categories.set(result[i], await this.getChildrenCategories(result[i]));
+    }
+    return categories;
+  }
+
+  async getChildrenCategories(id) {
+    const categories = await sequelize.query(
+      `SELECT id, name, parent_id,
+      (SELECT count(*) FROM categories b WHERE b.parent_id = a.id) as count
+      FROM categories a
+      WHERE parent_id = :id;
+      `,
+      {
+        replacements: { id },
+      },
+    );
+    const result = [];
+    for (let category of categories[0]) {
+      result.push(category);
+    }
+
+    return result;
+  }
+
+  async getCategoryById(id) {
+    const category = await Category.findByPk(id);
+    if (!category) {
+      throw new Error('Category not found');
+    }
+    return category;
   }
 }
 

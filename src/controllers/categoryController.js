@@ -66,4 +66,40 @@ router.get('/', async function (req, res) {
   }
 });
 
+router.get('/categoriesMap/:id', async function (req, res) {
+  try {
+    const id = req.params.id;
+    const categories = await categoryService.getCategoriesById(id);
+
+    let result = {};
+    for (const [key, value] of categories) {
+      const strKey = key + ' '; // 키를 문자열로 변환
+      result[strKey] = value;
+    }
+
+    res.status(200).send(result);
+  } catch (err) {
+    console.error('Error loading categories: ', err.message);
+    if (err.errors != null && err.errors[0].message != null) res.status(500).json({ message: err.errors[0].message });
+    else res.status(500).json({ message: 'Error loading categories' });
+  }
+});
+
+router.get('/:id', async function (req, res) {
+  try {
+    const id = req.params.id;
+    const category = await categoryService.getCategoryById(id);
+    res.status(200).json({ category, message: 'Category loaded successfully' });
+  } catch (err) {
+    console.error('Error loading category: ', err.message);
+    if (err.errors != null && err.errors[0].message != null) {
+      return res.status(500).json({ message: err.errors[0].message });
+    }
+    if (err.message === 'Category not found') {
+      return res.status(404).json({ message: err.message });
+    }
+    res.status(500).json({ message: 'Error loading category' });
+  }
+});
+
 export default router;

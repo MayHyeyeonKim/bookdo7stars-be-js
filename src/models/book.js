@@ -15,18 +15,18 @@ const Book = sequelize.define(
       unique: true,
     },
     title: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING(1000),
       allowNull: false,
     },
     author: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING(1000),
       allowNull: false,
     },
     description: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING(1000),
     },
     cover: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING(1000),
       allowNull: false,
     },
     pubDate: {

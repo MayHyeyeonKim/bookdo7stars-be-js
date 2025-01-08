@@ -1,26 +1,20 @@
 import Book from './book.js';
-import BookQueryType from './bookQueryType.js';
 import Cart from './cart.js';
 import User from './user.js';
+import BookQueryType from './bookQueryType.js';
 
 Book.hasMany(BookQueryType, {
-  foreignKey: 'book_id', //foreignKey: 참조되는 테이블(여기서는 BookQueryType)에 생성될 외래 키.
-  sourceKey: 'id', //참조하는 테이블(여기서는 Book)에서 사용할 키(기본 키 또는 고유 키).
+  foreignKey: 'book_id',
+  sourceKey: 'id',
 });
 
 Cart.belongsTo(Book, { foreignKey: 'book_id' });
 Cart.belongsTo(User, { foreignKey: 'user_id' });
 
-User.hasOne(Cart, { foreignKey: 'user_id', as: 'cart' });
-Book.hasMany(Cart, { foreignKey: 'book_id', as: 'carts' });
+// User 모델
+User.hasOne(Cart, { foreignKey: 'user_id', as: 'cart' }); // User는 하나의 Cart만 가짐
 
-export { Book, BookQueryType, Cart, User };
+// Book 모델
+Book.hasMany(Cart, { foreignKey: 'book_id', as: 'carts' }); // Book은 여러 Cart에 속할 수 있음
 
-/**
- * User.hasOne(Cart, { foreignKey: 'user_id', as: 'cart' });
-
-"User는 하나의 Cart(장바구니)를 가지며, Cart 테이블의 user_id를 통해 연결됩니다. 이 관계를 User 모델에서 cart라는 이름으로 참조할 수 있습니다."
-Book.hasMany(Cart, { foreignKey: 'book_id', as: 'carts' });
-
-"Book은 여러 개의 Cart(장바구니)에 속할 수 있으며, Cart 테이블의 book_id를 통해 연결됩니다. 이 관계를 Book 모델에서 carts라는 이름으로 참조할 수 있습니다."
- */
+export { Book, BookQueryType, Cart };

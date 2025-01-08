@@ -26,6 +26,8 @@ class CartService {
   }
 
   async addItemToCart(bookId, quantity, userId) {
+    console.log('SERVICE', bookId, quantity, userId);
+
     if (!bookId || !quantity) {
       throw new Error('bookId and quantity are required');
     }
@@ -50,21 +52,18 @@ class CartService {
           },
         ],
       });
-
       if (existingCart) {
+        console.log(existingCart);
         existingCart.quantity += quantity;
         await existingCart.save();
         return existingCart;
       }
-
       const newCartItem = {
         bookId: bookId,
         quantity: quantity,
         userId: userId,
       };
-
       const newItem = await Cart.create(newCartItem);
-
       const newItemWithBookInfo = await Cart.findOne({
         where: { bookId: newItem.bookId, userId: newItem.userId },
         attributes: { exclude: ['bookId', 'userId', 'book_id', 'user_id'] },
@@ -91,37 +90,16 @@ class CartService {
   async deleteItemFromCart(bookId, userId) {
     try {
       const item = await Cart.findOne({ where: { bookId: bookId, userId: userId } });
-
       if (!item) {
         return false;
       }
-
       await Cart.destroy({
         where: { bookId: bookId, userId: userId },
       });
-
       return true;
     } catch (error) {
       console.error('Error in deleteItemFromCart: error.message');
       throw new Error('Error deleting item from cart');
-    }
-  }
-
-  async updateItemQuantity(bookId, quantity, userId) {
-    try {
-      const cartItem = await Cart.findOne({ where: { bookId, userId } });
-
-      if (!cartItem) {
-        return null;
-      }
-
-      cartItem.quantity = quantity;
-      await cartItem.save();
-
-      return cartItem;
-    } catch (error) {
-      console.error('Error updating item quantity: ', error.message);
-      throw new Error('Failed to update cart item quantity');
     }
   }
 }

@@ -150,13 +150,7 @@ router.post('/login', (req, res) => {
     if (!user) {
       return res.status(401).json({ message: info.message });
     }
-    // console.log('req 객체====>', req);
-    // console.log('req 객체의 session====>', req.session);
-
     req.logIn(user, (err) => {
-      //req.logIn은 사용자 정보를 세션과 연결하는 역할을 수행함
-      // req.logIn은 사용자 객체를 세션에 추가하는 함수
-      // 이 함수는 사용자 정보를 세션에 추가하고 세션 ID를 생성함
       if (err) {
         return res.status(500).json({ message: err });
       }

@@ -47,6 +47,7 @@ router.get('/', async function (req, res) {
     if (!userFromSession) {
       throw new Error('user from session is not found');
     }
+    console.log(userFromSession.id);
     const cartItems = await cartService.getAllItemsInCart(userFromSession.id);
     res.status(200).json({ cartItems, message: 'CartItems successfully loaded' });
   } catch (err) {
@@ -56,9 +57,16 @@ router.get('/', async function (req, res) {
 
 router.post('/', async function (req, res) {
   try {
+    console.log('/cart/', req.body);
     const { bookId, quantity } = req.body;
+    console.log('req.session', req.session);
+
     const userFromSession = req.session?.passport?.user;
+    console.log('userFromSession', userFromSession.id);
+    console.log(userFromSession.id);
+
     const cartItem = await cartService.addItemToCart(bookId, quantity, userFromSession.id);
+    console.log('cartItem', cartItem);
     res.status(200).json({ cartItem, message: `${cartItem.book.title}` + ' is successfully added' });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -67,7 +75,9 @@ router.post('/', async function (req, res) {
 
 router.delete('/:id', async function (req, res) {
   try {
+    console.log('카트 delete컨트롤러 시작!');
     const userFromSession = req.session?.passport?.user;
+    console.log('User from session에 있는 id는 이거다 ==> ', userFromSession.id);
     const itemId = req.params.id;
     if (!itemId) {
       return res.status(400).json({ message: 'Bad Request: Missing item ID' });
@@ -85,23 +95,9 @@ router.delete('/:id', async function (req, res) {
 
 router.put('/:id', async function (req, res) {
   try {
-    const userFromSession = req.session?.passport?.user;
-    const itemId = req.params.id;
-    const { quantity } = req.body;
-
-    if (!userFromSession || !itemId || !quantity) {
-      return res.status(400).json({ message: 'Bad Request: Missing parameters' });
-    }
-
-    const updatedCartItem = await cartService.updateItemQuantity(itemId, quantity, userFromSession.id);
-    if (updatedCartItem) {
-      res.status(200).json({ cartItem: updatedCartItem, message: 'Quantity updated successfully' });
-    } else {
-      res.status(404).json({ message: 'Cart item not found' });
-    }
+    console.log('/cart/:id');
   } catch (err) {
-    console.error('Error updating cart item quantity:', err.message);
-    res.status(500).json({ message: 'Error updating cart item quantity' });
+    res.status(500).json({ message: 'Error loading cart' });
   }
 });
 
