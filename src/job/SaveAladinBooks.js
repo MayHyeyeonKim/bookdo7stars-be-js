@@ -1,24 +1,42 @@
+import cron from 'node-cron';
 import sequelize from '../config/db.js';
+
 import axios from 'axios';
 import { parseStringPromise } from 'xml2js';
 import dotenv from 'dotenv';
+// Schedule a job to run every minute
 dotenv.config();
 
 class AladinBooksJob {
   constructor() {
-    console.log('start AladinBooksJob');
+    this.init();
   }
 
-  async getAladinBooks(queryType) {
-    const totalCount = await this.getAladinBooksCountByQueryType(queryType);
+  init() {
+    console.log('start AladinBooksJob init method');
+    cron.schedule('6 19 * * *', async () => {
+      console.log('Job running every day');
+      const obj = new AladinBooksJob();
+      await obj.getAladinBooks('ItemNewAll');
+      await obj.getAladinBooks('ItemNewSpecial');
+      await obj.getAladinBooks('ItemEditorChoice', 'categoryId=1');
+      await obj.getAladinBooks('Bestseller');
+      await obj.getAladinBooks('BlogBest');
+    });
+  }
+
+  async getAladinBooks(queryType, ...options) {
+    const totalCount = await this.getAladinBooksCountByQueryType(queryType, options);
     for (let i = 1; i <= Math.ceil(totalCount / 50); i++) {
-      await this.fetchAladinBooksByQueryType(queryType, i);
+      await this.fetchAladinBooksByQueryType(queryType, i, options);
     }
   }
 
-  async getAladinBooksCountByQueryType(queryType) {
+  async getAladinBooksCountByQueryType(queryType, ...options) {
     const ttbKey = process.env.ALADIN_TTB_KEY;
-    const url = `http://www.aladin.co.kr/ttb/api/ItemList.aspx?ttbkey=${ttbKey}&QueryType=${queryType}&MaxResults=50&start=1&SearchTarget=Book&output=xml&Version=20131101`;
+    let url = `http://www.aladin.co.kr/ttb/api/ItemList.aspx?ttbkey=${ttbKey}&QueryType=${queryType}&MaxResults=50&start=1&SearchTarget=Book&output=xml&Version=20131101`;
+    for (let option of options) url += `&${option}`;
+
     try {
       const response = await axios.get(url);
       const parsedData = await parseStringPromise(response.data);
@@ -30,10 +48,14 @@ class AladinBooksJob {
     }
   }
 
-  async fetchAladinBooksByQueryType(queryType, page) {
+  async fetchAladinBooksByQueryType(queryType, page, ...options) {
     const ttbKey = process.env.ALADIN_TTB_KEY;
-    const url = `http://www.aladin.co.kr/ttb/api/ItemList.aspx?ttbkey=${ttbKey}&QueryType=${queryType}&MaxResults=50&start=${page}&SearchTarget=Book&output=xml&Version=20131101&Cover=Big`;
+    let url = `http://www.aladin.co.kr/ttb/api/ItemList.aspx?ttbkey=${ttbKey}&QueryType=${queryType}&MaxResults=50&start=${page}&SearchTarget=Book&output=xml&Version=20131101&Cover=Big`;
+    for (let option of options) url += `&${option}`;
+    // Fetch the data from the URL
     const response = await axios.get(url);
+
+    // Parse the XML data
     const parsedData = await parseStringPromise(response.data);
     for (let i = 0; i < parsedData.object.item.length; i++) {
       try {
@@ -104,15 +126,8 @@ class AladinBooksJob {
         console.error(error);
       }
     }
+    // Send the parsed data as JSON
   }
 }
 
-// AladinBooksJob 실행
-// (async () => {
-//   const job = new AladinBooksJob();
-//   await job.getAladinBooks('ItemNewAll');
-//   await job.getAladinBooks('ItemNewSpecial');
-//   await job.getAladinBooks('ItemEditorChoice');
-//   await job.getAladinBooks('Bestseller');
-//   await job.getAladinBooks('BlogBest');
-// })();
+export default new AladinBooksJob();

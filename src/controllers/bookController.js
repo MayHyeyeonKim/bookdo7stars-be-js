@@ -60,7 +60,8 @@ const router = express.Router();
  */
 router.get('/', async function (req, res) {
   try {
-    const books = await bookService.getAllBooks(req.query);
+    const user = req.session?.passport?.user;
+    const books = await bookService.getAllBooks(req.query, user);
     res.status(200).json({ books: books.rows, count: books.count, message: 'Books loaded successfully' });
   } catch (err) {
     console.error('Error loading books: ', err.message);
@@ -125,8 +126,9 @@ router.get('/', async function (req, res) {
 
 router.get('/detail/:id', async function (req, res) {
   try {
+    const user = req.session?.passport?.user;
     const id = req.params.id;
-    const book = await bookService.getBookDetailById(id);
+    const book = await bookService.getBookDetailById(id, user);
     res.status(200).json({ book, message: 'Book detail loaded successfully' });
   } catch (err) {
     console.error('Error loading book: ', err.message);
@@ -213,12 +215,13 @@ router.get('/detail/:id', async function (req, res) {
  */
 router.get('/mainpage', async function (req, res) {
   try {
+    const user = req.session?.passport?.user;
     const baseUrl = req.protocol + '://' + req.get('host');
     const banner = await bookService.getBanners(baseUrl);
-    const itemNewSpecial = await bookService.getBooksByQueryType('ItemNewSpecial', 1, 8);
+    const itemNewSpecial = await bookService.getBooksByQueryType('ItemNewSpecial', user, 1, 8);
     const bestSellerCategory = await categoryService.getCategories(2);
-    const itemNewAll = await bookService.getBooksByQueryType('ItemNewAll', 1, 12);
-    const itemEditorChoice = await bookService.getBooksByQueryType('ItemEditorChoice', 1, 8);
+    const itemNewAll = await bookService.getBooksByQueryType('ItemNewAll', user, 1, 12);
+    const itemEditorChoice = await bookService.getBooksByQueryType('ItemEditorChoice', user, 1, 8);
 
     const books = { banner, itemNewSpecial, bestSellerCategory, itemNewAll, itemEditorChoice };
     res.status(200).json({ books, message: 'mainpage loaded successfully' });
@@ -276,9 +279,10 @@ router.get('/mainpage', async function (req, res) {
  */
 router.get('/mainpage/bestseller', async function (req, res) {
   try {
+    const user = req.session?.passport?.user;
     const { categoryId, page, pageSize } = req.query;
     const childrenIds = await categoryService.getChildrenIds(categoryId);
-    const books = await bookService.getBooksByQueryTypeAndCategoryIds('Bestseller', childrenIds, page, pageSize);
+    const books = await bookService.getBooksByQueryTypeAndCategoryIds('Bestseller', childrenIds, user, page, pageSize);
     res.status(200).json({ books, message: 'BestSeller Books by category Ids loaded successfully' });
   } catch (err) {
     res.status(500).json({ message: 'Error loading BestSeller Books' });
@@ -370,8 +374,8 @@ router.get('/:groupName', async function (req, res) {
   try {
     const groupName = req.params.groupName;
     const { page, pageSize } = req.query;
-
-    const books = await bookService.getBooksByQueryType(groupName, page, pageSize);
+    const user = req.session?.passport?.user;
+    const books = await bookService.getBooksByQueryType(groupName, user, page, pageSize);
 
     res.status(200).json({ books, message: 'Books by group name loaded successfully' });
   } catch (err) {

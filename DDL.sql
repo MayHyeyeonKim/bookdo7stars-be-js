@@ -21,7 +21,6 @@ insert into users (name, email, password, mobile, grade, address, adminyn, statu
 insert into users(name, email, password, mobile, grade, address, adminyn, status) values('May','may@gmail.com','$2b$10$QGNZOXbL0OLlkCqfXCgsg.Pn2rI9D/wJBpfaSh9Ap39wQgOQL9Sge','+14144399310','Bronze','30, Seongji-ro 8beon-gil, Busanjin-gu',false,'active');
 insert into users(name, email, password, mobile, grade, address, adminyn, status) values('Mike','mike@gmail.com','$2b$10$fEi0/io6ldjMmfvXDEuB..jZthgimo15aR7PzExuwFMnpsrLwJSB.','+14144399310','Bronze','541 W 78th St',false,'active');
 
-
 CREATE TABLE books (
   id BIGINT PRIMARY KEY,
   isbn VARCHAR(30) NOT NULL,
@@ -46,6 +45,13 @@ CREATE TABLE books (
   updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
+create table wishlist (
+	user_id BIGINT,
+	book_id BIGINT,
+	PRIMARY KEY (user_id, book_id),
+	FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+	FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
+);
 
 CREATE TABLE book_query_types (
   book_id BIGINT,
@@ -141,6 +147,17 @@ CREATE TABLE carts (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+CREATE TABLE reviews (
+  id SERIAL PRIMARY KEY,
+  book_id INTEGER NOT NULL,
+  content VARCHAR(1000) NOT NULL,
+  user_id INTEGER,
+  created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (book_id) REFERENCES books(id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
 CREATE TABLE categories
 (
     id BIGINT PRIMARY KEY,

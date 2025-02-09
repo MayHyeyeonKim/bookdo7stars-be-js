@@ -1,32 +1,35 @@
 import express from 'express';
-import cartService from '../services/cartService.js';
-
+import reviewService from '../services/reviewService.js';
 /**
  * @swagger
  * tags:
- *   name: Cart
- *   description: The cart managing API
+ *   name: Review
+ *   description: The review managing API
  */
 
 const router = express.Router();
 
 /**
  * @swagger
- * /cart:
+ * /review:
  *   get:
- *     summary: 데이터베이스에 있는 cart 목록을 불러옵니다.
- *     tags: [Get All Cart items]
+ *     summary: 데이터베이스에 있는 review들 중에 해당 책의 리뷰을 불러옵니다.
+ *     tags: [Get all Reviews of a specific book]
  *     responses:
  *       200:
- *         description: cart 목록이 성공적으로 불려졌습니다.
+ *         description: review 목록이 성공적으로 불려졌습니다.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 cart:
+ *                 bookId:
+ *                   type: string
+ *                   description: 책의 고유 ID
+ *                   example: "123456789"
+ *                 reviews:
  *                   type: object
- *                   description: cart 배열
+ *                   description: review 배열
  *                   example: [{}]
  *
  *       500:
@@ -39,26 +42,24 @@ const router = express.Router();
  *                 message:
  *                   type: string
  *                   description: 오류 메세지
- *                   example: Error loading categories
+ *                   example: Error loading reviews
  */
-router.get('/', async function (req, res) {
+router.get('/:bookId', async function (req, res) {
   try {
-    const userFromSession = req.session?.passport?.user;
-    if (!userFromSession) {
-      return res.status(400).json({ message: 'User Not Found' });
-    }
-    const cartItems = await cartService.getAllItemsInCart(userFromSession.id);
-    res.status(200).json({ cartItems, message: 'CartItems successfully loaded' });
+    const bookId = req.params.bookId;
+
+    const reviews = await reviewService.getAllReviewsInBook(bookId);
+    res.status(200).json({ reviews: reviews.rows, count: reviews.count, message: 'Reviews loaded successfully' });
   } catch (err) {
     res.status(500).json({ message: 'Error loading cart' });
   }
 });
 /**
  * @swagger
- * /cart:
+ * /review:
  *   post:
- *     summary: 카트에 아이템들을 추가합니다.
- *     tags: [Cart]
+ *     summary: 책에 리뷰를 추가합니다.
+ *     tags: [Review]
  *     requestBody:
  *       required: true
  *       content:
@@ -72,36 +73,44 @@ router.get('/', async function (req, res) {
  *                   type: string
  *                   description: 책의 고유 ID
  *                   example: "123456789"
- *                 quantity:
- *                   type: integer
- *                   description: 추가할 수량
- *                   example: 2
+ *                 content:
+ *                   type: string
+ *                   description: 리뷰 텍스트
+ *                   example: "리뷰 입니다"
+ *                 userId:
+ *                   type: string
+ *                   description: 리뷰를 단 유저 ID
+ *                   example: 3
  *     responses:
  *       200:
- *         description: 아이템들이 카트에 성공적으로 추가되었습니다.
+ *         description: 리뷰가 책에 성공적으로 추가되었습니다.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 cartItems:
+ *                 reviews:
  *                   type: array
- *                   description: 추가된 카트 아이템들
- *                   items:
+ *                   description: 추가된 리뷰들
+ *                   reviews:
  *                     type: object
  *                     properties:
  *                       bookId:
- *                         type: string
- *                         description: 책의 고유 ID
- *                         example: "123456789"
- *                       quantity:
- *                         type: integer
- *                         description: 추가된 수량
- *                         example: 2
- *                 message:
- *                   type: string
- *                   description: 결과 메시지
- *                   example: "Selected books are successfully added"
+ *                          type: string
+ *                          description: 책의 고유 ID
+ *                          example: "123456789"
+ *                       content:
+ *                          type: string
+ *                          description: 리뷰 텍스트
+ *                          example: "리뷰 입니다"
+ *                       userId:
+ *                          type: string
+ *                          description: 리뷰를 단 유저 ID
+ *                          example: 3
+ *                    message:
+ *                      type: string
+ *                      description: 결과 메시지
+ *                      example: "Review is successfully added"
  *       400:
  *         description: 사용자 정보를 찾을 수 없음
  *         content:
@@ -125,51 +134,42 @@ router.get('/', async function (req, res) {
  *                   description: 에러 메시지
  *                   example: "Internal Server Error"
  */
-router.post('/', async function (req, res) {
+router.post('/:bookId', async function (req, res) {
   try {
-    console.log('/cart/', req.body);
-    const cartItemDto = req.body;
+    const bookId = req.params.bookId;
+    const { content } = req.body;
 
     const userFromSession = req.session?.passport?.user;
     if (!userFromSession) {
       return res.status(400).json({ message: 'User Not Found' });
     }
 
-    let cartItems = [];
-    if (cartItemDto.length === 1) {
-      const cartItem = await cartService.addItemToCart(
-        cartItemDto[0].bookId,
-        cartItemDto[0].quantity,
-        userFromSession.id,
-      );
-      cartItems.push(cartItem);
-      return res.status(200).json({ cartItems, message: `${cartItem.book.title}` + ' is successfully added' });
-    }
-
-    if (cartItemDto.length > 1) {
-      cartItemDto.map(async (item) => {
-        const cartItem = await cartService.addItemToCart(item.bookId, item.quantity, userFromSession.id);
-        cartItems.push(cartItem);
-      });
-      return res.status(200).json({ cartItems, message: 'Selected books are successfully added' });
-    }
+    const review = await reviewService.addReviewInBook(userFromSession.id, bookId, content);
+    res.status(200).json({ review, message: 'review is successfully added' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
+
 /**
  * @swagger
- * /cart/{id}:
+ * /review/{bookId}/{reviewId}:
  *   put:
- *     summary: 카트의 아이템 수량을 업데이트합니다.
- *     tags: [Cart]
+ *     summary: 책에 리뷰를 수정합니다.
+ *     tags: [Review]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: bookId
  *         required: true
  *         schema:
  *           type: string
- *         description: 업데이트할 아이템의 책 ID
+ *         description: 책의 고유 ID
+ *       - in: path
+ *         name: reviewId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 수정할 리뷰의 고유 ID
  *     requestBody:
  *       required: true
  *       content:
@@ -177,34 +177,38 @@ router.post('/', async function (req, res) {
  *           schema:
  *             type: object
  *             properties:
- *               quantity:
- *                 type: integer
- *                 description: 업데이트할 수량
- *                 example: 3
+ *               content:
+ *                 type: string
+ *                 description: 리뷰 텍스트
+ *                 example: "수정된 리뷰입니다."
  *     responses:
  *       200:
- *         description: 아이템이 성공적으로 업데이트되었습니다.
+ *         description: 리뷰가 성공적으로 수정되었습니다.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 cartItem:
+ *                 review:
  *                   type: object
- *                   description: 업데이트된 카트 아이템
+ *                   description: 수정된 리뷰 정보
  *                   properties:
  *                     bookId:
  *                       type: string
  *                       description: 책의 고유 ID
  *                       example: "123456789"
- *                     quantity:
- *                       type: integer
- *                       description: 업데이트된 수량
+ *                     content:
+ *                       type: string
+ *                       description: 리뷰 텍스트
+ *                       example: "수정된 리뷰입니다."
+ *                     userId:
+ *                       type: string
+ *                       description: 리뷰를 단 유저 ID
  *                       example: 3
  *                 message:
  *                   type: string
  *                   description: 결과 메시지
- *                   example: "Book Title is updated successfully"
+ *                   example: "Review is successfully updated"
  *       400:
  *         description: 사용자 정보를 찾을 수 없음
  *         content:
@@ -226,42 +230,49 @@ router.post('/', async function (req, res) {
  *                 message:
  *                   type: string
  *                   description: 에러 메시지
- *                   example: "Error loading cart"
+ *                   example: "Internal Server Error"
  */
-router.put('/:id', async function (req, res) {
+router.put('/:bookId/:reviewId', async function (req, res) {
   try {
-    const bookId = req.params.id;
-    const { quantity } = req.body;
-    console.log(req);
+    const bookId = req.params.bookId;
+    const reviewId = req.params.reviewId;
+    const { content } = req.body;
 
+    console.log(req.session);
     const userFromSession = req.session?.passport?.user;
     if (!userFromSession) {
       return res.status(400).json({ message: 'User Not Found' });
     }
 
-    const cartItem = await cartService.updateItemInCart(bookId, quantity, userFromSession.id);
-    res.status(200).json({ cartItem, message: `${cartItem.book.title}` + ' is updated successfully' });
+    const review = await reviewService.updateReview(userFromSession.id, bookId, reviewId, content);
+    res.status(200).json({ review, message: 'review is successfully added' });
   } catch (err) {
-    console.log(err.message);
-    res.status(500).json({ message: 'Error loading cart' });
+    res.status(500).json({ message: err.message });
   }
 });
+
 /**
  * @swagger
- * /cart/{id}:
+ * /review/{bookId}/{reviewId}:
  *   delete:
- *     summary: 카트에서 특정 아이템을 삭제합니다.
- *     tags: [Cart]
+ *     summary: 책에서 리뷰를 삭제합니다.
+ *     tags: [Review]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: bookId
  *         required: true
  *         schema:
  *           type: string
- *         description: 삭제할 아이템의 책 ID
+ *         description: 책의 고유 ID
+ *       - in: path
+ *         name: reviewId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 삭제할 리뷰의 고유 ID
  *     responses:
  *       200:
- *         description: 아이템이 성공적으로 삭제되었습니다.
+ *         description: 리뷰가 성공적으로 삭제되었습니다.
  *         content:
  *           application/json:
  *             schema:
@@ -269,8 +280,8 @@ router.put('/:id', async function (req, res) {
  *               properties:
  *                 message:
  *                   type: string
- *                   description: 결과 메시지
- *                   example: "successfully deleted!"
+ *                   description: 성공 메시지
+ *                   example: "Review is successfully deleted"
  *       400:
  *         description: 사용자 정보를 찾을 수 없음
  *         content:
@@ -292,21 +303,22 @@ router.put('/:id', async function (req, res) {
  *                 message:
  *                   type: string
  *                   description: 에러 메시지
- *                   example: "Error loading cart"
+ *                   example: "Internal Server Error"
  */
-router.delete('/:id', async function (req, res) {
+router.delete('/:bookId/:reviewId', async function (req, res) {
   try {
-    const bookId = req.params.id;
+    const bookId = req.params.bookId;
+    const reviewId = req.params.reviewId;
+
     const userFromSession = req.session?.passport?.user;
     if (!userFromSession) {
       return res.status(400).json({ message: 'User Not Found' });
     }
 
-    await cartService.deleteItemInCart(bookId, userFromSession.id);
-    res.status(200).json({ message: 'successfully deleted!' });
+    await reviewService.deleteReview(userFromSession.id, bookId, reviewId);
+    res.status(200).json({ message: 'review is successfully deleted' });
   } catch (err) {
-    res.status(500).json({ message: 'Error loading cart' });
+    res.status(500).json({ message: err.message });
   }
 });
-
 export default router;
