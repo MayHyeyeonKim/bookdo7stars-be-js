@@ -365,4 +365,57 @@ describe('bookService', () => {
     expect(Book.findOne).toHaveBeenCalledWith({ where: { isbn: givenIsbn } });
     expect(result).toEqual(mockBooks.rows[0]);
   });
+
+  it('should return books when it is searched with the category id list', async () => {
+    const page = 1;
+    const pageSize = 20;
+    const mockBooksFiltered = [
+      {
+        id: '1',
+        isbn: 'xxx',
+        title: 'Title1',
+        author: 'author1',
+        description: 'description1',
+        cover: 'cover1',
+        stockStatus: 'xx',
+        categoryId: 'id1',
+        mileage: 1,
+        categoryName: 'cat1',
+        publisher: 'publisher1',
+        adult: true,
+        fixedPrice: true,
+        priceStandard: 100,
+        priceSales: 90,
+        customerReviewRank: 10,
+        queryType: 'queryType1',
+        deleted: false,
+      },
+    ];
+
+    Book.findAll.mockResolvedValue(mockBooksFiltered);
+
+    const result = await bookService.getBooksByQueryTypeAndCategoryIds('Bestseller', ['id1'], page, pageSize);
+
+    const condition = {
+      include: [
+        {
+          model: BookQueryType,
+          where: {
+            query_type: 'Bestseller',
+          },
+          required: true, // INNER JOIN
+        },
+      ],
+      where: {
+        category_id: {
+          [Op.in]: ['id1'],
+        },
+      },
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+    };
+
+    expect(Book.findAll).toHaveBeenCalledWith(condition);
+    expect(result).toEqual(mockBooksFiltered);
+  });
 });

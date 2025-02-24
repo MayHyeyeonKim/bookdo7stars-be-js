@@ -145,7 +145,7 @@ CREATE TABLE carts (
 
 	FOREIGN KEY (book_id) REFERENCES books(id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-);
+)
 
 CREATE TABLE reviews (
   id SERIAL PRIMARY KEY,

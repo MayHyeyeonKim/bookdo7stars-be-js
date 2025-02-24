@@ -155,6 +155,33 @@ class BookService {
     }));
   }
 
+  async getBooksByAuthor(author, bookId, user, page = 1, pageSize = 5) {
+    const books = await Book.findAndCountAll({
+      where: {
+        author: author,
+        id: {
+          [Op.ne]: bookId,
+        },
+      },
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+      include: [
+        {
+          model: Wishlist,
+          where: { user_id: user ? user.id : null }, // 특정 사용자에 대해 북마크된 책만 가져옴
+          required: false, // 외부 조인 (Book은 있지만 Bookmark가 없는 경우도 포함)
+          attributes: ['book_id'], // 북마크된 책만 표시하고, 북마크가 없으면 null
+        },
+      ],
+    });
+
+    books.rows = books.rows.map((book) => ({
+      ...book.toJSON(),
+      isBookmarked: book.wishlists.length > 0, // 북마크가 있으면 true, 없으면 false
+    }));
+    return books;
+  }
+
   async getBookByIsbn(isbn) {
     const book = await Book.findOne({
       where: { isbn: isbn },

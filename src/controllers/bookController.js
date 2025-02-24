@@ -453,7 +453,7 @@ router.get('/:groupName', async function (req, res) {
  *                   example: Error loading book by isbn
  */
 
-router.get('/search/:isbn', async function (req, res) {
+router.get('/search/isbn/:isbn', async function (req, res) {
   try {
     const isbn = req.params.isbn;
     const book = await bookService.getBookByIsbn(isbn);
@@ -467,6 +467,77 @@ router.get('/search/:isbn', async function (req, res) {
       return res.status(404).json({ message: err.message });
     }
     res.status(500).json({ message: 'Error loading book' });
+  }
+});
+
+/**
+ * @swagger
+ * /search/author:
+ *   get:
+ *     tags: [Get books by author]
+ *     summary: Find books by author
+ *     description: Returns book by author from the database.
+ *     operationId: getBookByAuthor
+ *     parameters:
+ *       - name: author
+ *         description: author name
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Book by author loaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 books:
+ *                   type: object
+ *                   description: books objects
+ *                   example: [{
+ *                      "title": "book1",
+ *                      "isbn": "xxx",
+ *                      "author": "author1",
+ *                      "cover": "cover1",
+ *                      "priceStandard": 100
+ *                    }]
+ *                 message:
+ *                   type: string
+ *                   description: response message
+ *                   example: Book with 123456789 loaded successfully
+ *       400:
+ *         description: Invalid author supplied
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Invalid author
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   description: Error message
+ *                   example: Error loading books
+ */
+router.get('/search/author', async function (req, res) {
+  try {
+    const user = req.session?.passport?.user;
+    const { author, bookId, page, pageSize } = req.query;
+    const books = await bookService.getBooksByAuthor(author, bookId, user, page, pageSize);
+    res.status(200).json({ books: books.rows, count: books.count, message: 'Books loaded successfully' });
+  } catch (err) {
+    console.error('Error loading books: ', err.message);
+    if (err.errors != null && err.errors[0].message != null) res.status(500).json({ message: err.errors[0].message });
+    else res.status(500).json({ message: 'Error loading books' });
   }
 });
 
