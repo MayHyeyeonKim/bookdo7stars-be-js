@@ -7,27 +7,64 @@ import dotenv from 'dotenv';
 // Schedule a job to run every minute
 dotenv.config();
 
-class AladinBooksJob {
-  constructor() {
-    this.init();
+export const bookGroups = [
+  { queryType: 'ItemNewAll' },
+  { queryType: 'ItemNewSpecial' },
+  { queryType: 'ItemEditorChoice', options: ['categoryId=1'] },
+  { queryType: 'Bestseller' },
+  { queryType: 'BlogBest' },
+];
+const maxAladinResults = 1000;
+
+const sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+const fetchFromAladin = async (url, maxAttempts = 5) => {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await axios.get(url, { timeout: 15000 });
+    } catch (error) {
+      const status = error.response?.status;
+      const shouldRetry = (status === 429 || status === 503 || error.code === 'ECONNABORTED') && attempt < maxAttempts;
+
+      if (!shouldRetry) throw error;
+
+      const delay = attempt * 2000;
+      console.warn(`Aladin API returned ${status}; retrying in ${delay / 1000}s (${attempt}/${maxAttempts - 1})`);
+      await sleep(delay);
+    }
+  }
+};
+
+export class AladinBooksJob {
+  constructor({ schedule = true } = {}) {
+    if (schedule) this.init();
   }
 
   init() {
     console.log('start AladinBooksJob init method');
     cron.schedule('6 19 * * *', async () => {
       console.log('Job running every day');
-      const obj = new AladinBooksJob();
-      await obj.getAladinBooks('ItemNewAll');
-      await obj.getAladinBooks('ItemNewSpecial');
-      await obj.getAladinBooks('ItemEditorChoice', 'categoryId=1');
-      await obj.getAladinBooks('Bestseller');
-      await obj.getAladinBooks('BlogBest');
+      await this.syncAllBooks();
     });
+  }
+
+  async syncAllBooks(queryTypes) {
+    const groups = queryTypes ? bookGroups.filter(({ queryType }) => queryTypes.includes(queryType)) : bookGroups;
+
+    if (groups.length === 0) {
+      throw new Error('No valid book groups were provided');
+    }
+
+    for (const { queryType, options = [] } of groups) {
+      console.log(`Syncing ${queryType}`);
+      await this.getAladinBooks(queryType, ...options);
+    }
   }
 
   async getAladinBooks(queryType, ...options) {
     const totalCount = await this.getAladinBooksCountByQueryType(queryType, options);
-    for (let i = 1; i <= Math.ceil(totalCount / 50); i++) {
+    const resultCount = Math.min(totalCount, maxAladinResults);
+    for (let i = 1; i <= Math.ceil(resultCount / 50); i++) {
       await this.fetchAladinBooksByQueryType(queryType, i, options);
     }
   }
@@ -38,13 +75,13 @@ class AladinBooksJob {
     for (let option of options) url += `&${option}`;
 
     try {
-      const response = await axios.get(url);
+      const response = await fetchFromAladin(url);
       const parsedData = await parseStringPromise(response.data);
       const result = parsedData?.object?.totalResults?.[0];
       if (result) return parseInt(result);
       return result;
     } catch (error) {
-      console.error('Error fetching or parsing data:', error);
+      console.error(`Error fetching or parsing data: ${error.message}`);
     }
   }
 
@@ -53,7 +90,7 @@ class AladinBooksJob {
     let url = `http://www.aladin.co.kr/ttb/api/ItemList.aspx?ttbkey=${ttbKey}&QueryType=${queryType}&MaxResults=50&start=${page}&SearchTarget=Book&output=xml&Version=20131101&Cover=Big`;
     for (let option of options) url += `&${option}`;
     // Fetch the data from the URL
-    const response = await axios.get(url);
+    const response = await fetchFromAladin(url);
 
     // Parse the XML data
     const parsedData = await parseStringPromise(response.data);
@@ -130,4 +167,4 @@ class AladinBooksJob {
   }
 }
 
-export default new AladinBooksJob();
+export default new AladinBooksJob({ schedule: false });
