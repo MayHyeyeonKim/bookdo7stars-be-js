@@ -9,7 +9,7 @@ import {
   reviewController,
 } from './src/controllers/index.js';
 import cors from 'cors';
-import './src/job/SaveAladinBooks.js';
+import aladinBooksJob from './src/job/SaveAladinBooks.js';
 import './src/models/index.js';
 import dotenv from 'dotenv';
 import passport from 'passport';
@@ -18,18 +18,35 @@ import bodyParser from 'body-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+dotenv.config();
+aladinBooksJob.init();
+
 const app = express();
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: 'http://localhost:3000',
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+    },
     credentials: true,
   }),
 );
 
-dotenv.config();
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 app.use(
   session({
-    secret: 'your_secret_key',
+    secret: process.env.SESSION_SECRET || 'development-only-secret',
     resave: false,
     saveUninitialized: true,
     cookie: {
@@ -60,6 +77,11 @@ app.use('/category', categoryController);
 app.use('/cart', cartController);
 app.use('/review', reviewController);
 
-app.listen(4000, () => {
-  console.log('Server is running on port 4000');
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+const port = Number(process.env.PORT) || 4000;
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });

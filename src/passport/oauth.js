@@ -7,6 +7,8 @@ import userService from '../services/userService.js';
 
 dotenv.config();
 
+const oauthCallbackBaseUrl = (process.env.OAUTH_CALLBACK_BASE_URL || 'http://localhost:4000').replace(/\/$/, '');
+
 passport.use(
   new LocalStrategy({ usernameField: 'email', passwordField: 'password' }, async (email, password, done) => {
     // Replace this with your user authentication logic
@@ -28,7 +30,7 @@ passport.use(
       tokenURL: 'https://github.com/login/oauth/access_token',
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: 'http://localhost:4000/auth/github/callback',
+      callbackURL: `${oauthCallbackBaseUrl}/user/auth/github/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       // 여기에서 사용자 정보 확인 및 저장
@@ -62,7 +64,7 @@ passport.use(
       tokenURL: 'https://oauth2.googleapis.com/token',
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: 'http://localhost:4000/auth/google/callback',
+      callbackURL: `${oauthCallbackBaseUrl}/user/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       // 이곳에서 사용자를 찾거나 새로 생성할 수 있습니다.
